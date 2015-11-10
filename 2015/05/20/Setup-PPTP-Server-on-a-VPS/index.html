@@ -1,0 +1,743 @@
+<!doctype html>
+<html class="theme-next   use-motion ">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+    <link href='//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+  
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=0.4.5.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="PPTP,VPN,VPS," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Arthur Chunqi Li's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+
+
+
+<meta name="description" content="VPS is becoming more and more cheap, fast and powerful these years. Some cheap VPS, such as Linode, Ramnode, DigitalOcean, DirectSpace, are provided for individuals. There are a lot of comparison arti">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Setup PPTP Server on a VPS">
+<meta property="og:url" content="http://chunqi.li/2015/05/20/Setup-PPTP-Server-on-a-VPS/index.html">
+<meta property="og:site_name" content="Arthur Chunqi Li's Blog">
+<meta property="og:description" content="VPS is becoming more and more cheap, fast and powerful these years. Some cheap VPS, such as Linode, Ramnode, DigitalOcean, DirectSpace, are provided for individuals. There are a lot of comparison arti">
+<meta property="og:image" content="http://chunqi.li/images/Setup-PPTP-Server-on-a-VPS-01.png">
+<meta property="og:updated_time" content="2015-11-10T07:10:02.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Setup PPTP Server on a VPS">
+<meta name="twitter:description" content="VPS is becoming more and more cheap, fast and powerful these years. Some cheap VPS, such as Linode, Ramnode, DigitalOcean, DirectSpace, are provided for individuals. There are a lot of comparison arti">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: 'post',
+    motion: true
+  };
+</script>
+
+  <title> Setup PPTP Server on a VPS | Arthur Chunqi Li's Blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  <!--[if lte IE 8]>
+  <div style=' clear: both; height: 59px; padding:0 0 0 15px; position: relative;margin:0 auto;'>
+    <a href="http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie6_countdown_bannercode">
+      <img src="http://7u2nvr.com1.z0.glb.clouddn.com/picouterie.jpg" border="0" height="42" width="820"
+           alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today or use other browser ,like chrome firefox safari."
+           style='margin-left:auto;margin-right:auto;display: block;'/>
+    </a>
+  </div>
+<![endif]-->
+  
+
+
+
+
+
+
+  <div class="container one-column page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Arthur Chunqi Li's Blog</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu ">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/me" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            About Me
+          </a>
+        </li>
+      
+
+      
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div id="content" class="content">
+          
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Setup PPTP Server on a VPS
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            Posted on
+            <time itemprop="dateCreated" datetime="2015-05-20T14:45:45+08:00" content="2015-05-20">
+              2015-05-20
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp; In
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/Fire-on-the-Wall/" itemprop="url" rel="index">
+                    <span itemprop="name">Fire on the Wall</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+              &nbsp; | &nbsp;
+              <a href="/2015/05/20/Setup-PPTP-Server-on-a-VPS/#comments" itemprop="discussionUrl">
+                <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/05/20/Setup-PPTP-Server-on-a-VPS/" itemprop="commentsCount"></span>
+              </a>
+            </span>
+            
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body">
+
+      
+      
+
+      
+        <span itemprop="articleBody"><p>VPS is becoming more and more cheap, fast and powerful these years. Some cheap VPS, such as Linode, Ramnode, DigitalOcean, DirectSpace, are provided for individuals. There are a lot of comparison article across the Internet and you can chose the one fit for you. Here I will list a bunch of methods to surf the internet across a firewall, and also some using experiments.</p>
+<h1 id="Traditional_VPN_solutions">Traditional VPN solutions</h1><p>The traditional VPN solutions includes PPTP and L2TP+IPSec solutions. Both are the most popular VPN solutions which are support by almost any smart devices. PPTP and L2TP are all TCP-based VPN, which means a TCP connection must be contained between both ends to keep the status of VPN connection. Thus data lose or connection interrupted on these TCP connections will terminate the VPN connection. Besides these two VPNs are unable to change their TCP connection ports, that’s why PPTP and L2TP are easy to detect and blocked by the firewall. PPTP consumes TCP port 1723 and L2TP takes 1701. It differs on data transfer between these two VPNs. PPTP uses GRE packages  with value 47, which L2TP uses UDP packages via port 500 and 4500, and L2TP may also utilize ESP packages with value 50.</p>
+<h1 id="Install_PPTP_server_on_a_VPS">Install PPTP server on a VPS</h1><p>It’s very easy to setup PPTP VPN on any VPS running a Linux distro. I take Ubuntu 14.04 and a ramnode OpenVZ container VPS as an example (the same environment will be used in the following article), you just need to:</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install pptpd</span><br></pre></td></tr></table></figure>
+<p>Then configure pptpd.conf</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo nano /etc/pptpd.conf</span><br></pre></td></tr></table></figure>
+<p>change the server IP and client IP</p>
+<pre><code>localip <span class="number">192.168</span><span class="number">.0</span><span class="number">.1</span>
+remoteip <span class="number">192.168</span><span class="number">.0</span><span class="number">.100</span>-<span class="number">200</span>
+</code></pre><p>This set the pptp server IP 192.168.0.1 to its ppp device, and distribute 192.168.0.100-200 to the client side ppp device. You could change these to any value you like. But you’d better not change it besides IP range 192.168.0.0/16 and 10.0.0.0/8, since IPs in these two ranges are assigned to LAN. IPs in other range may used by the public servers, and the NAT mechanism (which will be discussed below) may confuse the traffic from the public servers and VPN clients. Localip and remoteip should be in the same network.</p>
+<p>Then uncomment the ms-dns and add google like below or OpenDNS:</p>
+<pre><code>ms-dns <span class="number">8.8</span><span class="number">.8</span><span class="number">.8</span>
+ms-dns <span class="number">8.8</span><span class="number">.4</span><span class="number">.4</span>
+</code></pre><p>Now add a VPN user in <code>/etc/ppp/chap-secrets</code> file.</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo nano /etc/ppp/chap-secrets</span><br></pre></td></tr></table></figure>
+<p>There are four columns in this file. The first is username, choose your favorite one. The second column is service name, such as pptpd or l2tpd. You can use <em> to allow all services using this config line. The third column is your password, stored in plain test (which is awful :-( ). The fourth column presents the IPs allowed to use this config line. Leave it </em> if you want to connect the VPN from anywhere. Here’s an example:</p>
+<pre><code>yourname <span class="keyword">*</span> yourpassword <span class="keyword">*</span>
+</code></pre><p>Until now we finished all the configuration of PPTP server and we need to restart it.</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo /etc/init.d/pptpd restart</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo service pptpd restart</span><br></pre></td></tr></table></figure>
+<h1 id="Setup_IPv4_Forwrding">Setup IPv4 Forwrding</h1><p>Besides of the configuration above, we need to enable IPv4 forwarding and setup the rules in iptables for SNAT. To enable IPv4 forwarding permanently, you need to edit file <code>/etc/sysctl.conf</code> and add (or change) a following line:</p>
+<pre><code>net<span class="class">.ipv4</span><span class="class">.ip_forward</span>=<span class="number">1</span>
+</code></pre><p>Then exit to shell and execute:</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo sysctl -p</span><br></pre></td></tr></table></figure>
+<h1 id="Setup_SNAT_in_iptables">Setup SNAT in iptables</h1><p>To add a rule in iptables, you can add the following lines in <code>/etc/rc.local</code> :</p>
+<pre><code>iptables -t nat -A POSTROUTING -s <span class="number">192.168</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">24</span> -o venet0 -j MASQUERADE
+iptables -A FORWARD -p tcp --syn -s <span class="number">192.168</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">24</span> -j TCPMSS --<span class="built_in">set</span>-mss <span class="number">1356</span>
+</code></pre><p>The first line means SNAT all the traffics from net 192.168.0.0/24 to the IP of local network interface venet0. If you setup PPTP server on a real machine, it maybe eth0 or em0. Check it with command <code>ifconfig</code>. If you adjust 192.168.0.0/24 to your favorite IPs in <code>localip</code> and <code>remoteip</code> sections above, you should replace -s 192.168.0.0/24 with the same IP range here.</p>
+<p>The second line is a little trivial and interesting. It means iptables will change MSS field of all the TCP packages with syn in header to 1356. MSS (Maximum Segment Size) defines the maximum size of a TCP package. The default value may be 1500 in some network (1500 is the maximum size in many Ethernet lines). Since VPN will consume a few spaces in the package header, the final size of a package may be larger than the maximum size which can hold by Ethernet line.</p>
+<p>There could be some wired problems without setting the second line. Without this, I can ping/traceroute some website successfully but cannot access the pages in browsers.</p>
+<p>Now you could use the username and password set in /etc/ppp/chap-secrets to use PPTP VPN. Remenber to enable MPPE encryption connection.</p>
+<h1 id="Enable_PPP_Support_of_VPS">Enable PPP Support of VPS</h1><p>PPP support is disabled by default by some VPS providers. You need to enable it manually. For a ramnode VPS, you need to login to its vps control panel (<a href="https://vpscp.ramnode.com/login.php" target="_blank" rel="external">https://vpscp.ramnode.com/login.php</a>), choose “Settings” tab at the bottom of the page and turn PPP on.</p>
+<img src="/images/Setup-PPTP-Server-on-a-VPS-01.png">
+<p>PPTP and L2TP uses PPP support by kernel, and other VPNs such as AnyConnect, OpenVPN, ShadowVPN utilize TUN/TAP support. So enable TUN/TAP as well.</p>
+<p>In the following post, I will introduce how to setup L2TP+IPSec VPN in a OpenVZ VPS.</p>
+</span>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/PPTP/" rel="tag">#PPTP</a>
+          
+            <a href="/tags/VPN/" rel="tag">#VPN</a>
+          
+            <a href="/tags/VPS/" rel="tag">#VPS</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/05/19/hello-world/" rel="next" title="Hello World">
+                <i class="fa fa-chevron-left"></i> Hello World
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/05/21/L2TP-IPSec-on-VPS/" rel="prev" title="L2TP+IPSec on VPS">
+                L2TP+IPSec on VPS <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+        </div>
+
+        
+
+
+        
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      </div>
+    
+  </div>
+
+
+      </div>
+
+      
+        
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Table Of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" src="/images/avatar_s.png" alt="Arthur Chunqi Li" itemprop="image"/>
+          <p class="site-author-name" itemprop="name">Arthur Chunqi Li</p>
+        </div>
+        <p class="site-description motion-element" itemprop="description"></p>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">5</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          <div class="site-state-item site-state-categories">
+            <a href="/categories">
+              <span class="site-state-item-count">4</span>
+              <span class="site-state-item-name">categories</span>
+              </a>
+          </div>
+
+          <div class="site-state-item site-state-tags">
+            <a href="/tags">
+              <span class="site-state-item-count">10</span>
+              <span class="site-state-item-name">tags</span>
+              </a>
+          </div>
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/xelatex/" target="_blank">
+                  
+                    <i class="fa fa-github"></i> GitHub
+                  
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Traditional_VPN_solutions"><span class="nav-number">1.</span> <span class="nav-text">Traditional VPN solutions</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Install_PPTP_server_on_a_VPS"><span class="nav-number">2.</span> <span class="nav-text">Install PPTP server on a VPS</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Setup_IPv4_Forwrding"><span class="nav-number">3.</span> <span class="nav-text">Setup IPv4 Forwrding</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Setup_SNAT_in_iptables"><span class="nav-number">4.</span> <span class="nav-text">Setup SNAT in iptables</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Enable_PPP_Support_of_VPS"><span class="nav-number">5.</span> <span class="nav-text">Enable PPP Support of VPS</span></a></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+      
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2015</span>
+  <span class="with-love">
+    <i class="icon-next-heart fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Arthur Chunqi Li</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="http://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top"></div>
+  </div>
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  
+
+  
+    
+    
+
+  
+
+    <script type="text/javascript">
+      var disqus_shortname = 'xelatex';
+      var disqus_identifier = '2015/05/20/Setup-PPTP-Server-on-a-VPS/';
+      var disqus_title = 'Setup PPTP Server on a VPS';
+      var disqus_url = 'http://chunqi.li/2015/05/20/Setup-PPTP-Server-on-a-VPS/';
+
+      function run_disqus_script(disqus_script){
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+      
+        run_disqus_script('embed.js');
+      
+    </script>
+  
+
+
+  
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+  <script type="text/javascript" src="/js/fancy-box.js?v=0.4.5.2"></script>
+
+
+  <script type="text/javascript" src="/js/helpers.js?v=0.4.5.2"></script>
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+<script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+<script type="text/javascript" src="/js/motion.js?v=0.4.5.2" id="motion.global"></script>
+
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  
+<script type="text/javascript" src="/js/bootstrap.scrollspy.js?v=0.4.5.2" id="bootstrap.scrollspy.custom"></script>
+
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    motionMiddleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+      if (CONFIG.sidebar === 'post') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  <script type="text/javascript" src="/js/bootstrap.js"></script>
+
+  
+  
+
+  
+  
+
+</body>
+</html>

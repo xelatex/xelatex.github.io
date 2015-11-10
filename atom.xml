@@ -189,11 +189,175 @@ TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">d
   </entry>
   
   <entry>
+    <title><![CDATA[L2TP+IPSec on VPS]]></title>
+    <link href="http://chunqi.li/2015/05/21/L2TP-IPSec-on-VPS/"/>
+    <id>http://chunqi.li/2015/05/21/L2TP-IPSec-on-VPS/</id>
+    <published>2015-05-21T06:59:34.000Z</published>
+    <updated>2015-11-10T07:10:03.000Z</updated>
+    <content type="html"><![CDATA[<p>L2TP+IPSec is another way to setup VPN on a VPS. L2TP consumes 1701 TCP port to maintain connection and 500/4500 UDP to transfer data. It’s very easy to implement L2TP and IPSec on a Ubuntu 14.04 server.</p>
+<p>Before setting up L2TP/IPSec environment, you need to enable PPP support for VPS. See details on section <strong>“Enable PPP Support of VPS”</strong> of my previous post “<a href="/2015/05/20/Setup-PPTP-Server-on-a-VPS/">Setup PPTP Server on a VPS</a>“ to enable PPP support on RamNode VPS.</p>
+<p>When I first installed xl2tpd and openswan, it occured to me the following errors and refused my iPhone VPN connection:</p>
+<pre><code><span class="type">May</span> <span class="number">19</span> <span class="number">05</span>:<span class="number">48</span>:<span class="number">46</span> xxx xl2tpd[<span class="number">1343</span>]: result_code_avp: <span class="literal">result</span> code endianness fix <span class="keyword">for</span> buggy <span class="type">Apple</span> client. network=<span class="number">768</span>, le=<span class="number">3</span>
+</code></pre><p>If you get the same error message, just follow step by step with me to setup L2TP+IPSec VPN.</p>
+<h1 id="Install_xl2tpd_and_openwan">Install xl2tpd and openwan</h1><p>Here I use openswan as my IPSec server. Just use the following commands to install xl2tpd and openswan:</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install openswan ppp xl2tpd</span><br></pre></td></tr></table></figure>
+<h1 id="Configure_xl2tpd">Configure xl2tpd</h1><p>We need to configure two files for xl2tpd: <code>/etc/xl2tpd/xl2tpd.conf</code> and <code>/etc/ppp/options.xl2tpd</code></p>
+<p>Here’s an example of <code>/etc/xl2tpd/xl2tpd.conf</code> :</p>
+<pre><code>[global]
+listen-addr = <span class="number">106.186</span><span class="number">.127</span><span class="number">.239</span>
+
+[lns <span class="keyword">default</span>]
+ip range = <span class="number">10.20</span><span class="number">.0</span><span class="number">.2</span>-<span class="number">10.20</span><span class="number">.0</span><span class="number">.100</span>
+local ip = <span class="number">10.20</span><span class="number">.0</span><span class="number">.1</span>
+assign ip = yes
+length bit = yes
+refuse pap = yes
+require authentication = yes
+pppoptfile = /etc/ppp/options.xl2tpd
+</code></pre><p>“ip range” defined IPs distributed to the client side and “local ip” is assigned to the server side. pppoptfile defines the detailed config file for xl2tpd.</p>
+<p>Then create file <code>/etc/ppp/options.xl2tpd</code> and add:</p>
+<pre><code>ms-dns <span class="number">8.8</span><span class="number">.8</span><span class="number">.8</span>
+ms-dns <span class="number">8.8</span><span class="number">.4</span><span class="number">.4</span>
+noccp
+asyncmap <span class="number">0</span>
+auth
+crtscts
+lock
+hide-password
+modem
+mru <span class="number">1200</span>
+nodefaultroute
+debug
+mtu <span class="number">1200</span>
+proxyarp
+lcp-echo-interval <span class="number">30</span>
+lcp-echo-failure <span class="number">4</span>
+ipcp-accept-local
+ipcp-accept-remote
+noipx
+idle <span class="number">1800</span>
+connect-delay <span class="number">5000</span>
+</code></pre><h1 id="Configure_OpenSwan_IPSec">Configure OpenSwan IPSec</h1><p>IPSec acts as a role to provide a secure routine for transferring data. OpenSwan is a good choice to set up a simple IPSec. Note that there are many IPSec choices and they should be exclusively installed in your system. And whatever IPSec server you installed, the command to call them is only “ipsec“. Use the following command to identify which IPSec service you’re using now.</p>
+<pre><code>ipsec <span class="comment">--version</span>
+</code></pre><p>The config file for OpenSwan is /etc/ipsec.conf. Actually this file name is identical for all IPSec service, which the content differs anyway. When you installed another IPSec service with apt-get, you need to change the format and contents of this file.</p>
+<p>Here’s an example of this file:</p>
+<pre><code>version <span class="number">2.0</span>
+
+config setup
+    dumpdir=/var/run/pluto/
+    nat_traversal=yes
+    virtual_private=%v4:<span class="number">10.0</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">8</span>,%v4:<span class="number">192.168</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">16</span>,%v4:<span class="number">172.16</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">12</span>,%v4:<span class="number">25.0</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">8</span>,%v6:fd00::/<span class="number">8</span>,%v6:fe80::/<span class="number">10</span>
+    protostack=netkey
+    force_keepalive=yes
+    keep_alive=<span class="number">60</span>
+
+conn l2tp-psk
+    authby=secret
+    pfs=no
+    <span class="keyword">auto</span>=add
+    keyingtries=<span class="number">3</span>
+    type=transport
+    left=<span class="number">1.2</span><span class="number">.3</span><span class="number">.4</span> <span class="preprocessor"># change to your own IP</span>
+    leftprotoport=<span class="number">17</span>/<span class="number">1701</span>
+    right=%any
+    rightprotoport=<span class="number">17</span>/%any
+</code></pre><p>The “virtual_private” line shows which network could use this IPSec routine, leave it as what it is. The only line you need to change is “left”, which should be your VPS IP address.</p>
+<p>Then we need to create and edit file <code>/etc/ipsec.secrets</code>.</p>
+<pre><code>: PSK <span class="string">"sharedpassword"</span>
+</code></pre><p><strong>Note that there’s blank before and after colon!</strong></p>
+<p>“sharedpassword” should be used as the “shared secret” when you connect L2TP.</p>
+<h1 id="Add_L2TP_VPN_account">Add L2TP VPN account</h1><p>Edit file <code>/etc/ppp/chap-secrets</code>, which is the same as PPTP server. Use the format like this:</p>
+<pre><code>yourname <span class="keyword">*</span> yourpassword <span class="keyword">*</span>
+</code></pre><h1 id="Setup_IPv4_forwarding_and_iptables_rules">Setup IPv4 forwarding and iptables rules</h1><p>It’s also the same as PPTP server, you just need to edit file <code>/etc/sysctl.conf</code> and add (or change) a following line:</p>
+<pre><code>net<span class="class">.ipv4</span><span class="class">.ip_forward</span>=<span class="number">1</span>
+</code></pre><p>Then exit to shell and execute:</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo sysctl -p</span><br></pre></td></tr></table></figure>
+<p>To add iptables rules,  add the following lines in <code>/etc/rc.local</code> :</p>
+<pre><code>iptables -t nat -A POSTROUTING -s <span class="number">10.20</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">24</span> -o venet0 -j MASQUERADE
+iptables -A FORWARD -p tcp --syn -s <span class="number">10.20</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">24</span> -j TCPMSS --<span class="built_in">set</span>-mss <span class="number">1356</span>
+</code></pre><p>Note “-s 10.20.0.0/24” should be the net range defined in “ip range” section of <code>/etc/xl2tpd/xl2tpd.conf</code> .</p>
+<p>At last, restart xl2tpd and ipsec:</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo service xl2tpd restart</span><br><span class="line">sudo service ipsec restart</span><br></pre></td></tr></table></figure>
+<p>Enjoy you surfing! ;)</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>L2TP+IPSec is another way to setup VPN on a VPS. L2TP consumes 1701 TCP port to maintain connection and 500/4500 UDP to transfer data. It]]>
+    </summary>
+    
+      <category term="IPSec" scheme="http://chunqi.li/tags/IPSec/"/>
+    
+      <category term="L2TP" scheme="http://chunqi.li/tags/L2TP/"/>
+    
+      <category term="VPN" scheme="http://chunqi.li/tags/VPN/"/>
+    
+      <category term="VPS" scheme="http://chunqi.li/tags/VPS/"/>
+    
+      <category term="Fire on the Wall" scheme="http://chunqi.li/categories/Fire-on-the-Wall/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[Setup PPTP Server on a VPS]]></title>
+    <link href="http://chunqi.li/2015/05/20/Setup-PPTP-Server-on-a-VPS/"/>
+    <id>http://chunqi.li/2015/05/20/Setup-PPTP-Server-on-a-VPS/</id>
+    <published>2015-05-20T06:45:45.000Z</published>
+    <updated>2015-11-10T07:10:02.000Z</updated>
+    <content type="html"><![CDATA[<p>VPS is becoming more and more cheap, fast and powerful these years. Some cheap VPS, such as Linode, Ramnode, DigitalOcean, DirectSpace, are provided for individuals. There are a lot of comparison article across the Internet and you can chose the one fit for you. Here I will list a bunch of methods to surf the internet across a firewall, and also some using experiments.</p>
+<h1 id="Traditional_VPN_solutions">Traditional VPN solutions</h1><p>The traditional VPN solutions includes PPTP and L2TP+IPSec solutions. Both are the most popular VPN solutions which are support by almost any smart devices. PPTP and L2TP are all TCP-based VPN, which means a TCP connection must be contained between both ends to keep the status of VPN connection. Thus data lose or connection interrupted on these TCP connections will terminate the VPN connection. Besides these two VPNs are unable to change their TCP connection ports, that’s why PPTP and L2TP are easy to detect and blocked by the firewall. PPTP consumes TCP port 1723 and L2TP takes 1701. It differs on data transfer between these two VPNs. PPTP uses GRE packages  with value 47, which L2TP uses UDP packages via port 500 and 4500, and L2TP may also utilize ESP packages with value 50.</p>
+<h1 id="Install_PPTP_server_on_a_VPS">Install PPTP server on a VPS</h1><p>It’s very easy to setup PPTP VPN on any VPS running a Linux distro. I take Ubuntu 14.04 and a ramnode OpenVZ container VPS as an example (the same environment will be used in the following article), you just need to:</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install pptpd</span><br></pre></td></tr></table></figure>
+<p>Then configure pptpd.conf</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo nano /etc/pptpd.conf</span><br></pre></td></tr></table></figure>
+<p>change the server IP and client IP</p>
+<pre><code>localip <span class="number">192.168</span><span class="number">.0</span><span class="number">.1</span>
+remoteip <span class="number">192.168</span><span class="number">.0</span><span class="number">.100</span>-<span class="number">200</span>
+</code></pre><p>This set the pptp server IP 192.168.0.1 to its ppp device, and distribute 192.168.0.100-200 to the client side ppp device. You could change these to any value you like. But you’d better not change it besides IP range 192.168.0.0/16 and 10.0.0.0/8, since IPs in these two ranges are assigned to LAN. IPs in other range may used by the public servers, and the NAT mechanism (which will be discussed below) may confuse the traffic from the public servers and VPN clients. Localip and remoteip should be in the same network.</p>
+<p>Then uncomment the ms-dns and add google like below or OpenDNS:</p>
+<pre><code>ms-dns <span class="number">8.8</span><span class="number">.8</span><span class="number">.8</span>
+ms-dns <span class="number">8.8</span><span class="number">.4</span><span class="number">.4</span>
+</code></pre><p>Now add a VPN user in <code>/etc/ppp/chap-secrets</code> file.</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo nano /etc/ppp/chap-secrets</span><br></pre></td></tr></table></figure>
+<p>There are four columns in this file. The first is username, choose your favorite one. The second column is service name, such as pptpd or l2tpd. You can use <em> to allow all services using this config line. The third column is your password, stored in plain test (which is awful :-( ). The fourth column presents the IPs allowed to use this config line. Leave it </em> if you want to connect the VPN from anywhere. Here’s an example:</p>
+<pre><code>yourname <span class="keyword">*</span> yourpassword <span class="keyword">*</span>
+</code></pre><p>Until now we finished all the configuration of PPTP server and we need to restart it.</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo /etc/init.d/pptpd restart</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo service pptpd restart</span><br></pre></td></tr></table></figure>
+<h1 id="Setup_IPv4_Forwrding">Setup IPv4 Forwrding</h1><p>Besides of the configuration above, we need to enable IPv4 forwarding and setup the rules in iptables for SNAT. To enable IPv4 forwarding permanently, you need to edit file <code>/etc/sysctl.conf</code> and add (or change) a following line:</p>
+<pre><code>net<span class="class">.ipv4</span><span class="class">.ip_forward</span>=<span class="number">1</span>
+</code></pre><p>Then exit to shell and execute:</p>
+<figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo sysctl -p</span><br></pre></td></tr></table></figure>
+<h1 id="Setup_SNAT_in_iptables">Setup SNAT in iptables</h1><p>To add a rule in iptables, you can add the following lines in <code>/etc/rc.local</code> :</p>
+<pre><code>iptables -t nat -A POSTROUTING -s <span class="number">192.168</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">24</span> -o venet0 -j MASQUERADE
+iptables -A FORWARD -p tcp --syn -s <span class="number">192.168</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">24</span> -j TCPMSS --<span class="built_in">set</span>-mss <span class="number">1356</span>
+</code></pre><p>The first line means SNAT all the traffics from net 192.168.0.0/24 to the IP of local network interface venet0. If you setup PPTP server on a real machine, it maybe eth0 or em0. Check it with command <code>ifconfig</code>. If you adjust 192.168.0.0/24 to your favorite IPs in <code>localip</code> and <code>remoteip</code> sections above, you should replace -s 192.168.0.0/24 with the same IP range here.</p>
+<p>The second line is a little trivial and interesting. It means iptables will change MSS field of all the TCP packages with syn in header to 1356. MSS (Maximum Segment Size) defines the maximum size of a TCP package. The default value may be 1500 in some network (1500 is the maximum size in many Ethernet lines). Since VPN will consume a few spaces in the package header, the final size of a package may be larger than the maximum size which can hold by Ethernet line.</p>
+<p>There could be some wired problems without setting the second line. Without this, I can ping/traceroute some website successfully but cannot access the pages in browsers.</p>
+<p>Now you could use the username and password set in /etc/ppp/chap-secrets to use PPTP VPN. Remenber to enable MPPE encryption connection.</p>
+<h1 id="Enable_PPP_Support_of_VPS">Enable PPP Support of VPS</h1><p>PPP support is disabled by default by some VPS providers. You need to enable it manually. For a ramnode VPS, you need to login to its vps control panel (<a href="https://vpscp.ramnode.com/login.php" target="_blank" rel="external">https://vpscp.ramnode.com/login.php</a>), choose “Settings” tab at the bottom of the page and turn PPP on.</p>
+<img src="/images/Setup-PPTP-Server-on-a-VPS-01.png">
+<p>PPTP and L2TP uses PPP support by kernel, and other VPNs such as AnyConnect, OpenVPN, ShadowVPN utilize TUN/TAP support. So enable TUN/TAP as well.</p>
+<p>In the following post, I will introduce how to setup L2TP+IPSec VPN in a OpenVZ VPS.</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>VPS is becoming more and more cheap, fast and powerful these years. Some cheap VPS, such as Linode, Ramnode, DigitalOcean, DirectSpace, a]]>
+    </summary>
+    
+      <category term="PPTP" scheme="http://chunqi.li/tags/PPTP/"/>
+    
+      <category term="VPN" scheme="http://chunqi.li/tags/VPN/"/>
+    
+      <category term="VPS" scheme="http://chunqi.li/tags/VPS/"/>
+    
+      <category term="Fire on the Wall" scheme="http://chunqi.li/categories/Fire-on-the-Wall/"/>
+    
+  </entry>
+  
+  <entry>
     <title><![CDATA[Hello World]]></title>
-    <link href="http://chunqi.li/2015/11/05/hello-world/"/>
-    <id>http://chunqi.li/2015/11/05/hello-world/</id>
-    <published>2015-11-05T06:06:56.000Z</published>
-    <updated>2015-11-09T01:06:52.000Z</updated>
+    <link href="http://chunqi.li/2015/05/19/hello-world/"/>
+    <id>http://chunqi.li/2015/05/19/hello-world/</id>
+    <published>2015-05-19T06:06:56.000Z</published>
+    <updated>2015-11-10T06:58:22.000Z</updated>
     <content type="html"><![CDATA[<p>This is a Hello World page of Arthur Chunqi Li’s blog.</p>
 <figure class="highlight c"><figcaption><span>hello_world.c</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"Hello World!\n"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="Links:">Links:</h2><ul>
