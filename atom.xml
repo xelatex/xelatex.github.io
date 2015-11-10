@@ -357,7 +357,7 @@ iptables -A FORWARD -p tcp --syn -s <span class="number">192.168</span><span cla
     <link href="http://chunqi.li/2015/05/19/hello-world/"/>
     <id>http://chunqi.li/2015/05/19/hello-world/</id>
     <published>2015-05-19T06:06:56.000Z</published>
-    <updated>2015-11-10T06:58:22.000Z</updated>
+    <updated>2015-11-10T07:10:04.000Z</updated>
     <content type="html"><![CDATA[<p>This is a Hello World page of Arthur Chunqi Li’s blog.</p>
 <figure class="highlight c"><figcaption><span>hello_world.c</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"Hello World!\n"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="Links:">Links:</h2><ul>
