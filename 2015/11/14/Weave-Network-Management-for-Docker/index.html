@@ -1,0 +1,829 @@
+<!doctype html>
+<html class="theme-next   use-motion ">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+    <link href='//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+  
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=0.4.5.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Docker,Multi-host Network,Weave," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Arthur Chunqi Li's Blog" type="application/atom+xml" />
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Weave is developed by Weaveworks for developers to control and observe Docker containers network. Similar to Flannel, Calico and Docker Overlay Network, Weave handles Docker multi-host networking and">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Weave: Network Management for Docker">
+<meta property="og:url" content="http://chunqi.li/2015/11/14/Weave-Network-Management-for-Docker/index.html">
+<meta property="og:site_name" content="Arthur Chunqi Li's Blog">
+<meta property="og:description" content="Weave is developed by Weaveworks for developers to control and observe Docker containers network. Similar to Flannel, Calico and Docker Overlay Network, Weave handles Docker multi-host networking and">
+<meta property="og:image" content="http://chunqi.li/images/wave-topology.png">
+<meta property="og:updated_time" content="2015-11-15T05:45:37.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Weave: Network Management for Docker">
+<meta name="twitter:description" content="Weave is developed by Weaveworks for developers to control and observe Docker containers network. Similar to Flannel, Calico and Docker Overlay Network, Weave handles Docker multi-host networking and">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: 'post',
+    motion: true
+  };
+</script>
+
+  <title> Weave: Network Management for Docker | Arthur Chunqi Li's Blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  <!--[if lte IE 8]>
+  <div style=' clear: both; height: 59px; padding:0 0 0 15px; position: relative;margin:0 auto;'>
+    <a href="http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie6_countdown_bannercode">
+      <img src="http://7u2nvr.com1.z0.glb.clouddn.com/picouterie.jpg" border="0" height="42" width="820"
+           alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today or use other browser ,like chrome firefox safari."
+           style='margin-left:auto;margin-right:auto;display: block;'/>
+    </a>
+  </div>
+<![endif]-->
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69908464-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?728e89dab529137c33053dbb13c72e60";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <div class="container one-column page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Arthur Chunqi Li's Blog</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu ">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/me" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            About Me
+          </a>
+        </li>
+      
+
+      
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div id="content" class="content">
+          
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Weave: Network Management for Docker
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            Posted on
+            <time itemprop="dateCreated" datetime="2015-11-14T19:38:28+08:00" content="2015-11-14">
+              2015-11-14
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp; In
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/Docker-Multi-host-Network/" itemprop="url" rel="index">
+                    <span itemprop="name">Docker Multi-host Network</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+              &nbsp; | &nbsp;
+              <a href="/2015/11/14/Weave-Network-Management-for-Docker/#comments" itemprop="discussionUrl">
+                <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/11/14/Weave-Network-Management-for-Docker/" itemprop="commentsCount"></span>
+              </a>
+            </span>
+            
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body">
+
+      
+      
+
+      
+        <span itemprop="articleBody"><p><a href="https://github.com/weaveworks/weave" target="_blank" rel="external">Weave</a> is developed by <a href="http://weave.works/" target="_blank" rel="external">Weaveworks</a> for developers to control and observe Docker containers network. Similar to <a href="/2015/10/10/Flannel-for-Docker-Overlay-Network/">Flannel</a>, <a href="/2015/09/06/calico-docker/">Calico</a> and <a href="/2015/11/09/docker-multi-host-networking/">Docker Overlay Network</a>, Weave handles Docker multi-host networking and management which can merge network of Docker’s laying on different hosts. Compared with the rest three solutions, weave provides more features and choices. I will write another blog to compare these four solutions in details. In this blog, I will focus on Weave’s install, features and technology inside.</p>
+<h1 id="About_Weave">About Weave</h1><p>Weave creates a virtual network that connects Dockers deployed across multiple hosts as well as their DNS discovery. Dockers on different hosts can communicate with each other just the same as they are in the same LAN, and broadcast is also well supported in such LAN network. Besides Dockers can discover each other by hostname implemented by Weave DNS discovery module, which is not supported by other multi-host network solutions.</p>
+<p>Weave can also tranverse the firewall and operate in partially connected networks. Packets will tranvers via a shortest path to the destination host contains Docker, even though the host hides behind a firewall and the sender host cannot access destination host directly. Traffic can also be encrypted, allowing hosts connect each other via untrusted network.</p>
+<p>Weave cooperates with Docker current single host or overlay network also, so there would be a seperate NIC for weave in Docker, as well as a weave virtual NIC on the host to capture all the packets send from Dockers.</p>
+<h1 id="Installation_and_Configuration">Installation and Configuration</h1><h2 id="Prerequsites">Prerequsites</h2><p>Two or more hosts (VM or PM) are need to setup a Docker cluster via weave. Here I use two Ubuntu 15.10 VM located on VMs running on my Mac. Let’s name these two hosts node1 and node2 with IP 10.156.75.101 and 10.156.75.102 seperately. Please ensure you are running Linux (Kernel 3.8 or later) and have Docker (version 1.3.1 or later) installed. <code>curl</code> or any alternative software (e.g. wget) is also necessary to download weave binary file.</p>
+<h2 id="Installation_and_Run_Weave_Cluster">Installation and Run Weave Cluster</h2><p>Then run such commands to finish weave installation:</p>
+<figure class="highlight bash"><figcaption><span>Install weave</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo curl -L git.io/weave -o /usr/<span class="built_in">local</span>/bin/weave</span><br><span class="line">sudo chmod a+x /usr/<span class="built_in">local</span>/bin/weave</span><br></pre></td></tr></table></figure>
+<p>Thus weave is installed succesfully. It’s so easy, right? The most important part for weave is not the binary itself. When weave starts, two Dockers <code>weaveworks/weaveexec</code> and <code>weaveworks/weave</code> will run to handle all the network configurations and network discovery service.</p>
+<p>Run on node1 to start weave service:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># weave launch</span></span><br><span class="line">root@node1:~<span class="comment"># docker ps</span></span><br><span class="line">CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS              PORTS               NAMES</span><br><span class="line"><span class="number">81799</span>b4eff2e        weaveworks/weaveexec:<span class="number">1.2</span>.<span class="number">1</span>   <span class="string">"/home/weave/weavepro"</span>   <span class="number">28</span> seconds ago      Up <span class="number">28</span> seconds                           weaveproxy</span><br><span class="line"><span class="number">676</span>b4d58ead4        weaveworks/weave:<span class="number">1.2</span>.<span class="number">1</span>       <span class="string">"/home/weave/weaver -"</span>   <span class="number">29</span> seconds ago      Up <span class="number">29</span> seconds                           weave</span><br></pre></td></tr></table></figure>
+<p>You can see two weave Dockers here. Then on node2, launch weave with it’s partener node1 (10.156.75.102):</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">root@node2:~<span class="comment"># weave launch 10.156.75.101</span></span><br></pre></td></tr></table></figure>
+<p>To confirm that weave cluster starts sucessfully, run following command on node1:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># weave status connections</span></span><br><span class="line">&lt;- <span class="number">10.156</span>.<span class="number">75.102</span>:<span class="number">32854</span>   established fastdp <span class="number">66</span>:b4:a1:<span class="number">85</span>:da:<span class="number">65</span>(node2)</span><br></pre></td></tr></table></figure>
+<p>Now you sucessfully setup a weave connection between node1 and node2.</p>
+<h2 id="Run_Docker_and_Test_Network">Run Docker and Test Network</h2><p>After weave cluster started, you could run Docker on node1 and node2 </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># weave run -itd --name=w1 ubuntu</span></span><br><span class="line">root@node2:~<span class="comment"># weave run -itd --name=w2 ubuntu</span></span><br></pre></td></tr></table></figure>
+<p>Then these two Dockers can communicate with each other. Test with a simple <code>ping</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># docker exec w1 ping -c4 w2</span></span><br></pre></td></tr></table></figure>
+<h1 id="Simple_Speed_Test">Simple Speed Test</h1><p>After setting up Weave network, I use <code>perf</code> to perform a simple performance test between Dockers on same/different hosts and compare them with native network performance.</p>
+<p>Here is the native performance between two hosts:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># iperf -c node2</span></span><br><span class="line">------------------------------------------------------------</span><br><span class="line">Client connecting to node2, TCP port <span class="number">5001</span></span><br><span class="line">TCP window size: <span class="number">85.0</span> KByte (default)</span><br><span class="line">------------------------------------------------------------</span><br><span class="line">[  <span class="number">3</span>] <span class="built_in">local</span> <span class="number">10.156</span>.<span class="number">75.101</span> port <span class="number">50534</span> connected with <span class="number">10.156</span>.<span class="number">75.102</span> port <span class="number">5001</span></span><br><span class="line">[ ID] Interval       Transfer     Bandwidth</span><br><span class="line">[  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec  <span class="number">2.57</span> GBytes  <span class="number">2.21</span> Gbits/sec</span><br></pre></td></tr></table></figure>
+<p>And the performance between Dockers on different hosts:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">root@w3:/<span class="comment"># iperf -c w1</span></span><br><span class="line">------------------------------------------------------------</span><br><span class="line">Client connecting to w1, TCP port <span class="number">5001</span></span><br><span class="line">TCP window size: <span class="number">76.5</span> KByte (default)</span><br><span class="line">------------------------------------------------------------</span><br><span class="line">[  <span class="number">3</span>] <span class="built_in">local</span> <span class="number">10.2</span>.<span class="number">1.65</span> port <span class="number">43966</span> connected with <span class="number">10.2</span>.<span class="number">1.2</span> port <span class="number">5001</span></span><br><span class="line">[ ID] Interval       Transfer     Bandwidth</span><br><span class="line">[  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec  <span class="number">1.87</span> GBytes  <span class="number">1.61</span> Gbits/sec</span><br></pre></td></tr></table></figure>
+<p>The performance between Dockers on the same host:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">root@a1:/<span class="comment"># iperf -c w1</span></span><br><span class="line">------------------------------------------------------------</span><br><span class="line">Client connecting to w1, TCP port <span class="number">5001</span></span><br><span class="line">TCP window size: <span class="number">45.0</span> KByte (default)</span><br><span class="line">------------------------------------------------------------</span><br><span class="line">[  <span class="number">3</span>] <span class="built_in">local</span> <span class="number">10.2</span>.<span class="number">1.1</span> port <span class="number">33750</span> connected with <span class="number">10.2</span>.<span class="number">1.2</span> port <span class="number">5001</span></span><br><span class="line">[ ID] Interval       Transfer     Bandwidth</span><br><span class="line">[  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.2</span> sec  <span class="number">54.0</span> GBytes  <span class="number">46.3</span> Gbits/sec</span><br></pre></td></tr></table></figure>
+<p>You can see network between Dockers on the same host is quite faster, the reason is Weave use <code>pcap</code> to identify whether the packet’s destination is located on the same host or not. Thus for the communications of Dockers on the same host, Weave could directly forward the packets to the right destination.</p>
+<p>This is only a simple performance test. I will perform a detailed test in the following blog with the comparison of Weave, Calico, Flannel, Docker Overlay Netowrk.</p>
+<h1 id="Dive_Deep_into_Weave">Dive Deep into Weave</h1><h2 id="Weave_Network_Topology">Weave Network Topology</h2><p>The main difference between Weave and other Docker multi-host network solutions is that Weave network uses a number <code>peers</code> to perform as the routers residing on different hosts. These routers build a network of these hosts and sends or routes packets to the right destination. Each peer has a human friendly nickname and a unique identifier which is different on its each run.</p>
+<p>Weave routers establish TCP connections to each other to perform starting handshakes and topology exchange on the runtime. Peers also establish UDP tunnels to carry encapsulate network packets. These packets can tranverse firewall with the help of other routers.</p>
+<p>Weave creates a network bridge on each host, and each container is connected to this bridge. After you start a Docker with Weave network, you could find the created bridge via <code>ifconfig</code>.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># ifconfig</span></span><br><span class="line">...</span><br><span class="line">weave     Link encap:Ethernet  HWaddr <span class="number">4</span>a:<span class="number">15</span>:<span class="number">49</span>:<span class="number">23</span>:bf:<span class="number">9</span>c</span><br><span class="line">          inet6 addr: fe80::<span class="number">4815</span>:<span class="number">49</span>ff:fe23:bf9c/<span class="number">64</span> Scope:Link</span><br><span class="line">          UP BROADCAST RUNNING MULTICAST  MTU:<span class="number">1410</span>  Metric:<span class="number">1</span></span><br><span class="line">          RX packets:<span class="number">726</span> errors:<span class="number">0</span> dropped:<span class="number">0</span> overruns:<span class="number">0</span> frame:<span class="number">0</span></span><br><span class="line">          TX packets:<span class="number">8</span> errors:<span class="number">0</span> dropped:<span class="number">0</span> overruns:<span class="number">0</span> carrier:<span class="number">0</span></span><br><span class="line">          collisions:<span class="number">0</span> txqueuelen:<span class="number">0</span></span><br><span class="line">          RX bytes:<span class="number">33956</span> (<span class="number">33.9</span> KB)  TX bytes:<span class="number">648</span> (<span class="number">648.0</span> B)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>This bridge performs the packets forwarding to and from the Dockers. Besides, Dockers connected to this bridge also creates a veth NIC. The container side veth is given an IP address and netmask by Weave’s IPAM module. The Weave router captures Ethernet packets from the bridged interface using <code>pcap</code> feature. This typically bypass packets tranversing between local containers, which will gain a better local containers networking performance. For packets between different hosts, Weave router will choose a best routing and send the packet to the next hop.</p>
+<h2 id="Partially_Connected_Network_Support">Partially Connected Network Support</h2><p>Differ from other solutions, Weave doesn’t rely on distributed storage (e.g. etcd and consul) to exchange routing information. Weave peers build a routing network themselves and implement rumour protocol to exchange networking topology when new peer adds and exits. Weave can also perform on a partially connected network and exchange packets with the help of other peers. Given a partially connected network as follows:</p>
+<img src="/images/wave-topology.png">
+<p>Peer 1/2/3 are connected to each other while peer 4 only connects to peer 3. If containers on peer 1 want to talk to containers on peer 4, the packets will first be send to peer 3 and then to peer 4. The connections between two directly connected host could achieve a <code>fastdp</code> connection and the indirect connections can only use <code>sleeve</code> connection. These two different connections have a huge gap in speed. I run a simple test with <code>iperf</code> on three containers, <code>w1</code> &amp; <code>w2</code> and <code>w1</code> &amp; <code>w3</code> locate on the directly connected hosts but <code>w2</code> &amp; <code>w3</code> locate on the indirectly connected hosts. From the indirectly connected host <code>node-pub-1</code>, you could run <code>weave status connections</code> to retrieve the connections:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">root@node-pub-<span class="number">1</span>:~<span class="comment"># weave status connections</span></span><br><span class="line">-&gt; <span class="number">10.156</span>.<span class="number">75.102</span>:<span class="number">6783</span>    established sleeve <span class="number">66</span>:b4:a1:<span class="number">85</span>:da:<span class="number">65</span>(node2)</span><br><span class="line">-&gt; <span class="number">192.168</span>.<span class="number">70.201</span>:<span class="number">6783</span>   established fastdp <span class="number">4</span>a:<span class="number">15</span>:<span class="number">49</span>:<span class="number">23</span>:bf:<span class="number">9</span>c(node1)</span><br></pre></td></tr></table></figure>
+<p>Then speed test results are as follows:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">root@w3:/<span class="comment"># iperf -c w2</span></span><br><span class="line">------------------------------------------------------------</span><br><span class="line">Client connecting to w2, TCP port <span class="number">5001</span></span><br><span class="line">TCP window size: <span class="number">45.0</span> KByte (default)</span><br><span class="line">------------------------------------------------------------</span><br><span class="line">[  <span class="number">3</span>] <span class="built_in">local</span> <span class="number">10.2</span>.<span class="number">1.65</span> port <span class="number">54304</span> connected with <span class="number">10.2</span>.<span class="number">1.129</span> port <span class="number">5001</span></span><br><span class="line">[ ID] Interval       Transfer     Bandwidth</span><br><span class="line">[  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec   <span class="number">146</span> MBytes   <span class="number">123</span> Mbits/sec</span><br><span class="line"></span><br><span class="line">root@w3:/<span class="comment"># iperf -c w1</span></span><br><span class="line">------------------------------------------------------------</span><br><span class="line">Client connecting to w1, TCP port <span class="number">5001</span></span><br><span class="line">TCP window size: <span class="number">76.5</span> KByte (default)</span><br><span class="line">------------------------------------------------------------</span><br><span class="line">[  <span class="number">3</span>] <span class="built_in">local</span> <span class="number">10.2</span>.<span class="number">1.65</span> port <span class="number">43966</span> connected with <span class="number">10.2</span>.<span class="number">1.2</span> port <span class="number">5001</span></span><br><span class="line">[ ID] Interval       Transfer     Bandwidth</span><br><span class="line">[  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec  <span class="number">1.77</span> GBytes  <span class="number">1.52</span> Gbits/sec</span><br></pre></td></tr></table></figure>
+<p>We could see the directly connected w1 and w3 achieve a quite high performance of 1.52 Gbits/sec, which indirectly connected w2 and w3 only get about 10% bandwidth. This could be a bottlenet for Weave developers to overcome.</p>
+<h2 id="Cooperate_with_Docker_Control_API">Cooperate with Docker Control API</h2><p>Weave provides a Docker API proxy to control weave docker in the same way of control Docker instead of using <code>weave run</code>. This allows you using the ordinary Docker <a href="https://docs.docker.com/reference/commandline/cli/" target="_blank" rel="external">command-line interface</a> or <a href="https://docs.docker.com/reference/api/docker_remote_api/" target="_blank" rel="external">remote API</a> to CRUD Dockers with Weave network.</p>
+<p>In the previous chapters, we use <code>weave launch</code> to run Weave directly, and we could see Weave-related Dockers created on the host:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># docker ps</span></span><br><span class="line">CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS              PORTS               NAMES</span><br><span class="line">ccb596b5a13a        weaveworks/weaveexec:<span class="number">1.2</span>.<span class="number">1</span>   <span class="string">"/home/weave/weavepro"</span>   <span class="number">16</span> seconds ago      Up <span class="number">16</span> seconds       weaveproxy</span><br><span class="line"><span class="number">790</span>cc66660fd        weaveworks/weave:<span class="number">1.2</span>.<span class="number">1</span>       <span class="string">"/home/weave/weaver -"</span>   <span class="number">15</span> hours ago        Up <span class="number">15</span> hours         weave</span><br></pre></td></tr></table></figure>
+<p>For these two Weave services, <code>weave</code> perform the main functions for Weave network, such as network configuration and DNS lookup. <code>weaveproxy</code> performs the role of a proxy between Docker client (command line or API) and the Docker daemon, intercepting the communication between these two components.</p>
+<p>Actually, <code>weave launch</code> performs <code>weave launch-router</code> and <code>weave launch-proxy</code> in a batch, you could run <code>weave launch-router</code> and <code>weave launch-proxy</code> seperately with different parameters. For example, if you want to control Weave via a TCP port instead of a unix file socket, you just need to add <code>-H</code> parameter to <code>weave launch-proxy</code>. You can run <code>weave stop-proxy</code> if you already use <code>weave launch</code> to launch both <code>router</code> and <code>proxy</code>.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># weave stop-proxy</span></span><br><span class="line">root@node1:~<span class="comment"># weave launch-proxy -H tcp://0.0.0.0:9999</span></span><br><span class="line">root@node1:~<span class="comment"># weave env</span></span><br><span class="line"><span class="built_in">export</span> DOCKER_HOST=tcp://<span class="number">127.0</span>.<span class="number">0.1</span>:<span class="number">9999</span> ORIG_DOCKER_HOST=</span><br></pre></td></tr></table></figure>
+<p>From <code>weave env</code>, you can see the current intercepted DOCKER_HOST from Weave is <code>tcp://127.0.0.1:9999</code>, you can use <code>docker -H 127.0.0.1:9999 &lt;command&gt;</code> to control Docker with Weave network support.</p>
+<p>You can also use following commands to add <code>tcp://127.0.0.1:9999</code> to <code>DOCKER_HOST</code> env params, thus you could use <code>docker</code> directly without assigning the API address.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># eval $(weave env)</span></span><br></pre></td></tr></table></figure>
+<p>For more details about weave proxy, you can see the <a href="http://docs.weave.works/weave/latest_release/proxy.html" target="_blank" rel="external">official weave proxy documentation page</a>.</p>
+<h2 id="IP_Allocation_Strategy_&amp;_Application_Isolation">IP Allocation Strategy &amp; Application Isolation</h2><p>Some more parameters can be set when launching weave to make IP allocation more flexible, thus could achieve application isolation via the CIDR network isolation speculations. From <code>weave help</code> you can see more detailed parameters for weave launch. The bad things is that there’s no more details on these params than listing them directly. But from the name of these params, you could guess what they are figuring out:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># weave help</span></span><br><span class="line">Usage:</span><br><span class="line">...</span><br><span class="line">weave launch        [--password &lt;password&gt;] [--nickname &lt;nickname&gt;]</span><br><span class="line">                      [--ipalloc-range &lt;cidr&gt; [--ipalloc-default-subnet &lt;cidr&gt;]]</span><br><span class="line">                      [--no-discovery] [--init-peer-count &lt;count&gt;] &lt;peer&gt; ...</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>For these params:</p>
+<ul>
+<li><code>--password</code> : password for weave cluster, newer weave node must use this password to join</li>
+<li><code>--nickname</code> : alias of weave node instead of its hostname</li>
+<li><code>--ipalloc-range</code> : IP range allocated for Docker</li>
+<li><code>--ipalloc-default-subnet</code> : default subnet allocated for Docker, you can use <code>-e WEAVE_CIDR=net:${CIDR}</code> when running a docker with other IP allocation method. See next chapter for more details.</li>
+<li><code>--no-discovery</code> : don’t use DNS discovery service</li>
+<li><code>--init-peer-count &lt;count&gt;</code> : start service after <code>&lt;count&gt;</code> peers connect to the cluster</li>
+</ul>
+<p>So if you want more flexible IP allocation methods, run the following commands on node1 and node2:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># weave launch --ipalloc-range 10.2.0.0/16 --ipalloc-default-subnet 10.2.1.0/24</span></span><br><span class="line">root@node1:~<span class="comment"># eval $(weave env)</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@node2:~<span class="comment"># weave launch --ipalloc-range 10.2.0.0/16 --ipalloc-default-subnet 10.2.1.0/24 $node1</span></span><br><span class="line">root@node2:~<span class="comment"># eval $(weave env)</span></span><br></pre></td></tr></table></figure>
+<p>This delegates the entire 10.2.0.0/16 subnet to weave, and instructs it to allocate from 10.2.1.0/24 within that if no specific subnet is specified. Now we can launch some containers in the default subnet:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># docker run --name a1 -ti ubuntu</span></span><br><span class="line">root@node2:~<span class="comment"># docker run --name a2 -ti ubuntu</span></span><br></pre></td></tr></table></figure>
+<p>And some more containers in a different subnet:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># docker run -e WEAVE_CIDR=net:10.2.2.0/24 --name b1 -ti ubuntu</span></span><br><span class="line">root@node2:~<span class="comment"># docker run -e WEAVE_CIDR=net:10.2.2.0.24 --name b2 -ti ubuntu</span></span><br></pre></td></tr></table></figure>
+<p>A quick <code>ping</code> test could illustrates network connections betwwen a1~a2 and b1~b2:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># docker exec a1 ping -c 4 a2</span></span><br><span class="line">root@node1:~<span class="comment"># docker exec b1 ping -c 4 b2</span></span><br></pre></td></tr></table></figure>
+<p>While no connections between a1~b2 or b1~a2:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@node1:~<span class="comment"># docker exec a1 ping -c 4 b2</span></span><br><span class="line">root@node1:~<span class="comment"># docker exec b1 ping -c 4 a2</span></span><br></pre></td></tr></table></figure>
+<h1 id="Conclusion">Conclusion</h1><p>Weave is a good networking management tools for Docker and provides the most functions compared with other solutions. You could find more feature details on its <a href="http://docs.weave.works/weave/latest_release/features.html" target="_blank" rel="external">official feature document</a>.</p>
+<h1 id="References">References</h1><p>[1] Weaveworks homepage, <a href="http://weave.works/" target="_blank" rel="external">http://weave.works/</a><br>[2] Weave GitHub homepage, <a href="https://github.com/weaveworks/weave" target="_blank" rel="external">https://github.com/weaveworks/weave</a><br>[3] Weave features, <a href="http://docs.weave.works/weave/latest_release/features.html" target="_blank" rel="external">http://docs.weave.works/weave/latest_release/features.html</a><br>[4] Weave proxy reference, <a href="http://docs.weave.works/weave/latest_release/proxy.html" target="_blank" rel="external">http://docs.weave.works/weave/latest_release/proxy.html</a></p>
+</span>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Docker/" rel="tag">#Docker</a>
+          
+            <a href="/tags/Multi-host-Network/" rel="tag">#Multi-host Network</a>
+          
+            <a href="/tags/Weave/" rel="tag">#Weave</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/11/09/docker-multi-host-networking/" rel="next" title="Docker Multi-host Overlay Networking in Docker Engine v1.9">
+                <i class="fa fa-chevron-left"></i> Docker Multi-host Overlay Networking in Docker Engine v1.9
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+        </div>
+
+        
+
+
+        
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      </div>
+    
+  </div>
+
+
+      </div>
+
+      
+        
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Table Of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" src="/images/avatar_s.png" alt="Arthur Chunqi Li" itemprop="image"/>
+          <p class="site-author-name" itemprop="name">Arthur Chunqi Li</p>
+        </div>
+        <p class="site-description motion-element" itemprop="description"></p>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">7</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          <div class="site-state-item site-state-categories">
+            <a href="/categories">
+              <span class="site-state-item-count">3</span>
+              <span class="site-state-item-name">categories</span>
+              </a>
+          </div>
+
+          <div class="site-state-item site-state-tags">
+            <a href="/tags">
+              <span class="site-state-item-count">12</span>
+              <span class="site-state-item-name">tags</span>
+              </a>
+          </div>
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/xelatex/" target="_blank">
+                  
+                    <i class="fa fa-github"></i> GitHub
+                  
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="linkedin.chunqi.li" target="_blank">
+                  
+                    <i class="fa fa-globe"></i> LinkedIn
+                  
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://facebook.chunqi.li/" target="_blank">
+                  
+                    <i class="fa fa-globe"></i> Facebook
+                  
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="mailto:chunqi.li.pku@gmail.com" target="_blank">
+                  
+                    <i class="fa fa-globe"></i> Email
+                  
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://blog.chunqi.li" target="_blank">
+                  
+                    <i class="fa fa-globe"></i> Blog
+                  
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#About_Weave"><span class="nav-number">1.</span> <span class="nav-text">About Weave</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Installation_and_Configuration"><span class="nav-number">2.</span> <span class="nav-text">Installation and Configuration</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Prerequsites"><span class="nav-number">2.1.</span> <span class="nav-text">Prerequsites</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Installation_and_Run_Weave_Cluster"><span class="nav-number">2.2.</span> <span class="nav-text">Installation and Run Weave Cluster</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Run_Docker_and_Test_Network"><span class="nav-number">2.3.</span> <span class="nav-text">Run Docker and Test Network</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Simple_Speed_Test"><span class="nav-number">3.</span> <span class="nav-text">Simple Speed Test</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Dive_Deep_into_Weave"><span class="nav-number">4.</span> <span class="nav-text">Dive Deep into Weave</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Weave_Network_Topology"><span class="nav-number">4.1.</span> <span class="nav-text">Weave Network Topology</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Partially_Connected_Network_Support"><span class="nav-number">4.2.</span> <span class="nav-text">Partially Connected Network Support</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cooperate_with_Docker_Control_API"><span class="nav-number">4.3.</span> <span class="nav-text">Cooperate with Docker Control API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP_Allocation_Strategy_&_Application_Isolation"><span class="nav-number">4.4.</span> <span class="nav-text">IP Allocation Strategy & Application Isolation</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Conclusion"><span class="nav-number">5.</span> <span class="nav-text">Conclusion</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#References"><span class="nav-number">6.</span> <span class="nav-text">References</span></a></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+      
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2015</span>
+  <span class="with-love">
+    <i class="icon-next-heart fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Arthur Chunqi Li</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="http://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top"></div>
+  </div>
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  
+
+  
+    
+    
+
+  
+
+    <script type="text/javascript">
+      var disqus_shortname = 'xelatex';
+      var disqus_identifier = '2015/11/14/Weave-Network-Management-for-Docker/';
+      var disqus_title = 'Weave: Network Management for Docker';
+      var disqus_url = 'http://chunqi.li/2015/11/14/Weave-Network-Management-for-Docker/';
+
+      function run_disqus_script(disqus_script){
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+      
+        run_disqus_script('embed.js');
+      
+    </script>
+  
+
+
+  
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+  <script type="text/javascript" src="/js/fancy-box.js?v=0.4.5.2"></script>
+
+
+  <script type="text/javascript" src="/js/helpers.js?v=0.4.5.2"></script>
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+<script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+<script type="text/javascript" src="/js/motion.js?v=0.4.5.2" id="motion.global"></script>
+
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  
+<script type="text/javascript" src="/js/bootstrap.scrollspy.js?v=0.4.5.2" id="bootstrap.scrollspy.custom"></script>
+
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    motionMiddleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+      if (CONFIG.sidebar === 'post') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  <script type="text/javascript" src="/js/bootstrap.js"></script>
+
+  
+  
+
+  
+  
+
+</body>
+</html>

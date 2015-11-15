@@ -250,8 +250,8 @@
             
               
                 
-                <a class="post-title-link" href="/2015/11/10/Flannel-for-Docker-Overlay-Network/" itemprop="url">
-                  Flannel for Docker Overlay Network
+                <a class="post-title-link" href="/2015/11/14/Weave-Network-Management-for-Docker/" itemprop="url">
+                  Weave: Network Management for Docker
                 </a>
               
             
@@ -261,8 +261,8 @@
         <div class="post-meta">
           <span class="post-time">
             Posted on
-            <time itemprop="dateCreated" datetime="2015-11-10T18:03:49+08:00" content="2015-11-10">
-              2015-11-10
+            <time itemprop="dateCreated" datetime="2015-11-14T19:38:28+08:00" content="2015-11-14">
+              2015-11-14
             </time>
           </span>
 
@@ -287,8 +287,8 @@
             
               <span class="post-comments-count">
               &nbsp; | &nbsp;
-              <a href="/2015/11/10/Flannel-for-Docker-Overlay-Network/#comments" itemprop="discussionUrl">
-                <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/11/10/Flannel-for-Docker-Overlay-Network/" itemprop="commentsCount"></span>
+              <a href="/2015/11/14/Weave-Network-Management-for-Docker/#comments" itemprop="discussionUrl">
+                <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/11/14/Weave-Network-Management-for-Docker/" itemprop="commentsCount"></span>
               </a>
             </span>
             
@@ -310,12 +310,11 @@
         
           <span itemprop="articleBody">
             
-            In previous post, some overlay network technologies for Docker are analysised. On this post let’s focus on Flannel, a virtual network that creates subnet work Dockers across different hosts.
-Introduction to FlannelFlannel, similar to Calico, VXLAN and Weave, provides a configurable virtual overlay network for Docker. Flannel runs an agent, flanneld, on each host and is responsible for allocating subnet lease out of a preconfigured address space. Flannel uses etcd to store network configurations.
+            Weave is developed by Weaveworks for developers to control and observe Docker containers network. Similar to Flannel, Calico and Docker Overlay Network, Weave handles Docker multi-host networking and management which can merge network of Docker’s laying on different hosts. Compared with the rest three solutions, weave provides more features and choices. I will write another blog to compare these four solutions in details. In this blog, I will focus on Weave’s install, features and technology ins
             ...
           </span>
           <div class="post-more-link text-center">
-            <a class="btn" href="/2015/11/10/Flannel-for-Docker-Overlay-Network/#more" rel="contents">
+            <a class="btn" href="/2015/11/14/Weave-Network-Management-for-Docker/#more" rel="contents">
               Read more &raquo;
             </a>
           </div>
@@ -466,8 +465,8 @@ Multi-host NetworkingMulti-host Networking was announced as part of experimental
             
               
                 
-                <a class="post-title-link" href="/2015/11/06/calico-docker/" itemprop="url">
-                  Calico: A Solution of Multi-host Network For Docker
+                <a class="post-title-link" href="/2015/10/10/Flannel-for-Docker-Overlay-Network/" itemprop="url">
+                  Flannel for Docker Overlay Network
                 </a>
               
             
@@ -477,8 +476,8 @@ Multi-host NetworkingMulti-host Networking was announced as part of experimental
         <div class="post-meta">
           <span class="post-time">
             Posted on
-            <time itemprop="dateCreated" datetime="2015-11-06T14:06:56+08:00" content="2015-11-06">
-              2015-11-06
+            <time itemprop="dateCreated" datetime="2015-10-10T18:03:49+08:00" content="2015-10-10">
+              2015-10-10
             </time>
           </span>
 
@@ -503,8 +502,116 @@ Multi-host NetworkingMulti-host Networking was announced as part of experimental
             
               <span class="post-comments-count">
               &nbsp; | &nbsp;
-              <a href="/2015/11/06/calico-docker/#comments" itemprop="discussionUrl">
-                <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/11/06/calico-docker/" itemprop="commentsCount"></span>
+              <a href="/2015/10/10/Flannel-for-Docker-Overlay-Network/#comments" itemprop="discussionUrl">
+                <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/10/10/Flannel-for-Docker-Overlay-Network/" itemprop="commentsCount"></span>
+              </a>
+            </span>
+            
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body">
+
+      
+      
+
+      
+        
+          <span itemprop="articleBody">
+            
+            In previous post, some overlay network technologies for Docker are analysised. On this post let’s focus on Flannel, a virtual network that creates subnet work Dockers across different hosts.
+Introduction to FlannelFlannel, similar to Calico, VXLAN and Weave, provides a configurable virtual overlay network for Docker. Flannel runs an agent, flanneld, on each host and is responsible for allocating subnet lease out of a preconfigured address space. Flannel uses etcd to store network configurations.
+            ...
+          </span>
+          <div class="post-more-link text-center">
+            <a class="btn" href="/2015/10/10/Flannel-for-Docker-Overlay-Network/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2015/09/06/calico-docker/" itemprop="url">
+                  Calico: A Solution of Multi-host Network For Docker
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            Posted on
+            <time itemprop="dateCreated" datetime="2015-09-06T14:06:56+08:00" content="2015-09-06">
+              2015-09-06
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp; In
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/Docker-Multi-host-Network/" itemprop="url" rel="index">
+                    <span itemprop="name">Docker Multi-host Network</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+              &nbsp; | &nbsp;
+              <a href="/2015/09/06/calico-docker/#comments" itemprop="discussionUrl">
+                <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/09/06/calico-docker/" itemprop="commentsCount"></span>
               </a>
             </span>
             
@@ -531,7 +638,7 @@ This post focus on how to setup a multi-host networking for Docker containers wi
             ...
           </span>
           <div class="post-more-link text-center">
-            <a class="btn" href="/2015/11/06/calico-docker/#more" rel="contents">
+            <a class="btn" href="/2015/09/06/calico-docker/#more" rel="contents">
               Read more &raquo;
             </a>
           </div>
@@ -927,7 +1034,7 @@ LinkedIn: http://linkedin.chunqi.li
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">6</span>
+              <span class="site-state-item-count">7</span>
               <span class="site-state-item-name">posts</span>
             </a>
           </div>
@@ -941,7 +1048,7 @@ LinkedIn: http://linkedin.chunqi.li
 
           <div class="site-state-item site-state-tags">
             <a href="/tags">
-              <span class="site-state-item-count">11</span>
+              <span class="site-state-item-count">12</span>
               <span class="site-state-item-name">tags</span>
               </a>
           </div>
