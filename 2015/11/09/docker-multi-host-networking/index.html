@@ -37,7 +37,7 @@
 <link href="/css/main.css?v=0.4.5.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Docker,Multi-host Network,VXLAN," />
+  <meta name="keywords" content="Docker,Etcd,Multi-host Network,Overlay Network,VXLAN," />
 
 
 
@@ -55,13 +55,13 @@
 
 <meta name="description" content="Docker has released its newest version v1.9 (see details) on November 3, 2015. This big release put Swarm and multi-host networking into production-ready status. This blog illustrates the configuratio">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Docker Multi-host Overlay Networking in Docker Engine v1.9">
+<meta property="og:title" content="Docker Multi-host Overlay Networking with Etcd">
 <meta property="og:url" content="http://chunqi.li/2015/11/09/docker-multi-host-networking/index.html">
 <meta property="og:site_name" content="Arthur Chunqi Li's Blog">
 <meta property="og:description" content="Docker has released its newest version v1.9 (see details) on November 3, 2015. This big release put Swarm and multi-host networking into production-ready status. This blog illustrates the configuratio">
-<meta property="og:updated_time" content="2015-11-15T03:57:51.000Z">
+<meta property="og:updated_time" content="2015-11-15T06:19:48.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Docker Multi-host Overlay Networking in Docker Engine v1.9">
+<meta name="twitter:title" content="Docker Multi-host Overlay Networking with Etcd">
 <meta name="twitter:description" content="Docker has released its newest version v1.9 (see details) on November 3, 2015. This big release put Swarm and multi-host networking into production-ready status. This blog illustrates the configuratio">
 
 
@@ -74,7 +74,7 @@
   };
 </script>
 
-  <title> Docker Multi-host Overlay Networking in Docker Engine v1.9 | Arthur Chunqi Li's Blog </title>
+  <title> Docker Multi-host Overlay Networking with Etcd | Arthur Chunqi Li's Blog </title>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="en">
@@ -233,7 +233,7 @@
             
             
               
-                Docker Multi-host Overlay Networking in Docker Engine v1.9
+                Docker Multi-host Overlay Networking with Etcd
               
             
           </h1>
@@ -339,7 +339,11 @@ TCP window size: <span class="number">81.0</span> KByte (<span class="keyword">d
           
             <a href="/tags/Docker/" rel="tag">#Docker</a>
           
+            <a href="/tags/Etcd/" rel="tag">#Etcd</a>
+          
             <a href="/tags/Multi-host-Network/" rel="tag">#Multi-host Network</a>
+          
+            <a href="/tags/Overlay-Network/" rel="tag">#Overlay Network</a>
           
             <a href="/tags/VXLAN/" rel="tag">#VXLAN</a>
           
@@ -432,7 +436,7 @@ TCP window size: <span class="number">81.0</span> KByte (<span class="keyword">d
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">7</span>
+              <span class="site-state-item-count">8</span>
               <span class="site-state-item-name">posts</span>
             </a>
           </div>
@@ -446,7 +450,7 @@ TCP window size: <span class="number">81.0</span> KByte (<span class="keyword">d
 
           <div class="site-state-item site-state-tags">
             <a href="/tags">
-              <span class="site-state-item-count">12</span>
+              <span class="site-state-item-count">14</span>
               <span class="site-state-item-name">tags</span>
               </a>
           </div>
@@ -588,7 +592,7 @@ TCP window size: <span class="number">81.0</span> KByte (<span class="keyword">d
     <script type="text/javascript">
       var disqus_shortname = 'xelatex';
       var disqus_identifier = '2015/11/09/docker-multi-host-networking/';
-      var disqus_title = 'Docker Multi-host Overlay Networking in Docker Engine v1.9';
+      var disqus_title = 'Docker Multi-host Overlay Networking with Etcd';
       var disqus_url = 'http://chunqi.li/2015/11/09/docker-multi-host-networking/';
 
       function run_disqus_script(disqus_script){

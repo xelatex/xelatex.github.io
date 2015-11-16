@@ -4,7 +4,7 @@
   
   <link href="/atom.xml" rel="self"/>
   <link href="http://chunqi.li/"/>
-  <updated>2015-11-15T05:45:37.000Z</updated>
+  <updated>2015-11-16T04:02:03.000Z</updated>
   <id>http://chunqi.li/</id>
   
   <author>
@@ -15,11 +15,390 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
+    <title><![CDATA[Battlefield: Calico, Flannel, Weave and Docker Overlay Network]]></title>
+    <link href="http://chunqi.li/2015/11/15/Battlefield-Calico-Flannel-Weave-and-Docker-Overlay-Network/"/>
+    <id>http://chunqi.li/2015/11/15/Battlefield-Calico-Flannel-Weave-and-Docker-Overlay-Network/</id>
+    <published>2015-11-15T06:10:17.000Z</published>
+    <updated>2015-11-16T04:02:03.000Z</updated>
+    <content type="html"><![CDATA[<p>From the previous posts, I have analysed 4 different Docker multi-host network solutions - Calico, Flannel, Weave and Docker Overlay Network. You can see more details on how to install, config and tune features of them from previous posts:</p>
+<ul>
+<li><a href="/2015/09/06/calico-docker/">Calico: A Solution of Multi-host Network For Docker</a></li>
+<li><a href="/2015/10/10/Flannel-for-Docker-Overlay-Network/">Flannel for Docker Overlay Network</a></li>
+<li><a href="/2015/11/14/Weave-Network-Management-for-Docker/">Weave: Network Management for Docker</a></li>
+<li><a href="/2015/11/09/docker-multi-host-networking/">Docker Multi-host Overlay Networking with Etcd</a></li>
+</ul>
+<p>This post provides a battlefiled for these 4 Docker multi-host network solutions, including features and performances.</p>
+<p><strong>If you want to see the results directly, directly jump to the <a href="/2015/11/15/Battlefield-Calico-Flannel-Weave-and-Docker-Overlay-Network/#Conclusion">Conclusion</a> chapter.</strong></p>
+<h1 id="Docker_Multi-host_Networking_Introduction">Docker Multi-host Networking Introduction</h1><p>Docker kicked out with a simple single-host networking from the very beginning. Unfortunately, this prevents Docker clusters from scale out to multiple hosts. A number of projects put their focus on this problem such as Calico, Flannel and Weave, and also since Nov. 2015, Docker support the Multi-host Overlay Networking itself.</p>
+<p>What these projects have in common is trying to control the container’s networking configurations, thus to capture and inject network packets. Consequently, every containers located on different hosts can get IPs in the same subnet and communicate with each other as if they are connected to the same L2 switch. In this way, containers could spread out on multiple hosts, even on multiple data centers.</p>
+<p>While there are also a lot of differences between them from technical models, network topology and features. This post will mainly focus on the differences between Calico, Flannel, Weave and Docker Overlay Network, and you could choose the right solution which fits best to your requirements.</p>
+<h1 id="Battlefield_Overview">Battlefield Overview</h1><p>According the features these Big Four support, I will compare them in the following aspects:</p>
+<ul>
+<li><strong>Network Model</strong> - What kind of network model are used to support multi-host network.</li>
+<li><strong>Application Isolation</strong> - Support what level and kind of application isolation of containers.</li>
+<li><strong>Name Service</strong> - DNS lookup with simple hostname or DNS rules.</li>
+<li><strong>Distributed Storage Requirements</strong> - Whether an external distributed storage is required, e.g. etcd or consul.</li>
+<li><strong>Encryption Channel</strong> - Whether data and infomation tranvers can put in an encryption channel.</li>
+<li><strong>Partially Connected Network Support</strong> - Whether the system can run on a partially connected host network.</li>
+<li><strong>Seperate vNIC for Container</strong> - Whether a seperate NIC is generated for container.</li>
+<li><strong>IP Overlap Support</strong> - Whether the same IP can be allocated to different containers.</li>
+<li><strong>Container Subnet Restriction</strong> - Whether container’s subnet should not be the same as host’s.</li>
+<li><strong>Protocol Support</strong> - What kind of Layer-3 or Layer-4 protocols are supported.</li>
+</ul>
+<p>Now let’s see more details of these aspects on Calico, Flannel, Weave and Docker Overlay Network.</p>
+<h1 id="Network_Model">Network Model</h1><p>Multi-host networking means aggregating containers on different hosts to a same virtual network, and also these networking providers (Calico, etc.) are organized as a clustering network, too. The cluster organizations are called network model in this post. Technically, these four solutions uses different network model to organize their own network topology.</p>
+<p><strong>Calico</strong> implements a pure Layer 3 approach to achieve a simpler, higher scaling, better performance and more efficient multi-host networking. So Calico can not be treated as an <code>overlay network</code>. The pure Layer 3 approach avoids the packet encapsulation associated with the Layer 2 solution which simplifies diagnostics, reduces transport overhead and improves performance. Calico also implements BGP protocl for routing combined with a pure IP network, thus allows Internetl scaling for virtual networks.</p>
+<p><strong>Flannel</strong> has two different network model to choose. One is called UDP backend, which is a simple IP-over-IP solutions which uses a TUN device to encapsulate every IP fragment in a UDP packet, thus forming an overlay network; the other is a VxLAN backend, which is same as Docker Overlay Network. I have run a simple test for these two models, VxLAN is much more faster than UDP backend. The reason, I suggest, is that VxLAN is well supported by Linux Kernel, while UDP backend implements a pure software-layer encapsulation. Flannel requires a Etcd cluster to store the network configuration, allocate subnets and auxiliary data (such as host’s IP). And the packet routing also requires the cooperation of Etcd cluster. Besides, Flannel runs a seperate process <code>flanneld</code> on host environment to support packet switching. Apart from Docker, flannel can also used for traditional VMs.</p>
+<p><strong>Weave</strong> also has two different connection modes. One is called <code>sleeve</code>, which implements a UDP channel to tranverse IP packets from containers. The main differences between Weave sleeve mode and Flannel UDP backend mode is that, Weave will merge multiple container’s packet to one packet and transfer via UDP channel, so technically Weave sleeve mode will be a bit faster than Flannel UDP backend mode in most cases. The other connection mode of Weave is called <code>fastdp</code> mode, which also implements a VxLAN solutions. Though there’s no official documents clarifying the VxLAN usage, we still can found the usage of VxLAN from Weave codes. Weave runs a Docker container performing the same role as <code>flanneld</code>.</p>
+<p><strong>Docker Overlay Network</strong> implements a VxLAN-based solution with the help of <code>libnetwork</code> and <code>libkv</code>, and, of course, is integrated into Docker succesfully without any seperate process or containers.</p>
+<p>So a brief conclusion of network model is in the following table:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Calico</th>
+<th>Flannel</th>
+<th>Weave</th>
+<th>Docker Overlay Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Network Model</td>
+<td>Pure Layer-3 Solution</td>
+<td>VxLAN or UDP Channel</td>
+<td>VxLAN or UDP Channel</td>
+<td>VxLAN</td>
+</tr>
+</tbody>
+</table>
+<h1 id="Application_Isolation">Application Isolation</h1><p>Since containers are connected to each other, we need a method to put containers into different groups and isolate containers in different group.</p>
+<p><strong>Flannel</strong>, <strong>Weave</strong> and <strong>Docker Overlay Network</strong> uses the same application isolation schema - the traditional CIDR isolation. The traditional CIDR isolation uses netmask to identify different subnet, and machines in different subnet cannot talk to each other. For example, w1/w2/w3 has IP 192.168.0.2/24 192.168.0.3/24 and 192.168.1.2/24 seperately. w1 and w2 can talk to each other since they are in the same subnet 192.168.0.0/24, but w3 cannot talk to w1 and w2.</p>
+<p><strong>Calico</strong> implements another type of application isolation schema - profile. You can create a batch of profiles and append containers with Calico network into different profiles. Only containers in the same profile could talk to each other. Containers in differen profile cannot access to each other even though they are in the same CIDR subnet.</p>
+<p><strong>Brief conclusion:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Calico</th>
+<th>Flannel</th>
+<th>Weave</th>
+<th>Docker Overlay Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Application Isolation</td>
+<td>Profile Schema</td>
+<td>CIDR Schema</td>
+<td>CIDR Schema</td>
+<td>CIDR Schema</td>
+</tr>
+</tbody>
+</table>
+<h1 id="Protocol_Support">Protocol Support</h1><p>Since <strong>Calico</strong> is a pure Layer-3 solution, not all Layer-3 or Layer-4 protocols are supported. From the official github forum, developers of Calico declaims only <strong>TCP</strong>, <strong>UDP</strong>, <strong>ICMP</strong> ad <strong>ICMPv6</strong> are supported by Calico. It does make sense that supporting other protocols are a bit harder in such a Layer-3 solution.</p>
+<p>Other solutions support all protocols. It’s easy for them to achieve so because either udp encapsulation or VxLAN can support encapsulate L2 packets over L3. So it doesn’t matter what kind of protocol the packet holds.</p>
+<p><strong>Brief conclusion:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Calico</th>
+<th>Flannel</th>
+<th>Weave</th>
+<th>Docker Overlay Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Protocol Support</td>
+<td>TCP, UDP, ICMP &amp; ICMPv6</td>
+<td>ALL</td>
+<td>ALL</td>
+<td>ALL</td>
+</tr>
+</tbody>
+</table>
+<h1 id="Name_Service">Name Service</h1><p><strong>Weave</strong> supports a name service between containers. When you create a container, Weave will put it into a DNS name service with format {hostname}.weave.local. Thus you can access to any container with {hostname}.weave.local or simply use {hostname}. The suffix (weave.local) can be changed to other strings, and the DNS lookup service can also be turned off.</p>
+<p>The others don’t have such feature.</p>
+<p><strong>Brief conclusion:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Calico</th>
+<th>Flannel</th>
+<th>Weave</th>
+<th>Docker Overlay Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Name Service</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h1 id="Distributed_Storage_Requirements">Distributed Storage Requirements</h1><p>As to <strong>Calico</strong>, <strong>Flannel</strong> and <strong>Docker Overlay Network</strong>, a distributed storage such as Etcd and Consul is a requirement to change routing and host information. Docker Overlay Network can also cooperate with Docker Swarm’s discovery services to build a cluster.</p>
+<p><strong>Weave</strong>, however, doesn’t need a distributed storage because Weave itself has a node discovery service using Rumor Protocol. This design decouples with another distributed storage system while introduces complexity and consistency concern of IP allocations, as well as the IPAM performance when cluster grows larger.</p>
+<p><strong>Brief conclusion:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Calico</th>
+<th>Flannel</th>
+<th>Weave</th>
+<th>Docker Overlay Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Distributed Storage Requirements</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h1 id="Encryption_Channel">Encryption Channel</h1><p><strong>Flannel</strong> supports TLS encryption channel between Flannel and Etcd, as well as data path between Flannel peers. You can see more details on <code>flanneld --help</code> with <code>-etcd-certfile</code> and <code>-remote-certfile</code> parameters.</p>
+<p><strong>Weave</strong> can be configured to encrypt both control data passing over TCP connections and the payloads of UDP packets sent between peers. This is accomplished with the <a href="http://nacl.cr.yp.to/" target="_blank" rel="external">NaCl</a> crypto libraries employing Curve25519, XSalsa20 and Poly1305 to encrypt and authenticate messages. Weave protects against injection and replay attacks for traffic forwarded between peers.</p>
+<p><strong>Calico</strong> and <strong>Docker Overlay Network</strong> doesn’t support any kinds of encryption method, neither Calico-Etcd channel nor data path between Calico peers. But Calico achieves best performance among these four solutions, so it’s better fit for an internal environment or if you don’t care about data safety.</p>
+<p><strong>Brief conclusion:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Calico</th>
+<th>Flannel</th>
+<th>Weave</th>
+<th>Docker Overlay Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Encryption Channel</td>
+<td>No</td>
+<td>TLS</td>
+<td>NaCl Library</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h1 id="Partially_Connected_Network_Support">Partially Connected Network Support</h1><p><strong>Weave</strong> can be deployed in a partially connected network, a brief example is as follows:</p>
+<img src="/images/wave-topology.png">
+<p>There are four peers with peer 1~3 connect with each other and peer 4 only connects to peer3. Weave can be deployed on peer 1~4. Any traffic from containers on peer 1 to containers on peer 4 will be traversed via peer 3.</p>
+<p>This feature allows Weave connects hosts aparted by a firewall, thus connects hosts with internal IP address in different data centers.</p>
+<p>Others don’t have such feature.</p>
+<p><strong>Brief conclusion:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Calico</th>
+<th>Flannel</th>
+<th>Weave</th>
+<th>Docker Overlay Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Partially Connected Network Support</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h1 id="Seperate_vNIC_for_Container">Seperate vNIC for Container</h1><p>Since <strong>Flannel</strong>, <strong>Weave</strong> and <strong>Docker Overlay Network</strong> create a bridged device and a veth inner containers, they create a seperate vNIC for containers. Routing table of container is also changed, thus bypass all packets of clustered network to this newly created NIC. Other connections, such as google.com, will route to the original vNIC.</p>
+<p><strong>Calico</strong> can use a unified vNIC for container because it’s a pure Layer-3 solution. Calico can configure NAT for out-going requests and forward subnet packages to other Calico peers. Calico can also use Docker bridged NIC for out-going requests with some manual configuration inner containers. In this way, you need to add <code>-cap-add=Net_Admin</code> parameter when execute <code>docker run</code>.</p>
+<p><strong>Brief conclusion:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Calico</th>
+<th>Flannel</th>
+<th>Weave</th>
+<th>Docker Overlay Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Seperate vNIC for Container</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<h1 id="IP_Overlap_Support">IP Overlap Support</h1><p>Technically, for VxLAN-based solutions, tenant networks can have overlapping internal IP address, though IP addresses assigned to hosts must be unique. According to VxLAN speculations, <strong>Weave</strong>, <strong>Flannel</strong> and <strong>Docker Overlay Network</strong> can support IP overlap for containers. But on my testing environment, I cannot configure any of these three support IP overlap. So I can only say they have <strong>potential</strong> to support IP overlap.</p>
+<p><strong>Calico</strong> cannot support IP overlap technically, but Calico official documents emphasize that they can put overlapping IPv4 containers’ packets on IPv6 network. Although this is an alternative solution for IPv4 network, I prefer to treate Calico not support IP overlap.</p>
+<p><strong>Brief conclusion:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Calico</th>
+<th>Flannel</th>
+<th>Weave</th>
+<th>Docker Overlay Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IP Overlap Support</td>
+<td>No</td>
+<td>Maybe</td>
+<td>Maybe</td>
+<td>Maybe</td>
+</tr>
+</tbody>
+</table>
+<h1 id="Container_Subnet_Restriction">Container Subnet Restriction</h1><p>This section focus on whether container subnet can overlap with host network.</p>
+<p><strong>Flannel</strong> creates a real bridged network on the host with the subnet address, and use host Linux routing table to forward container packages to this bridge device. So container’s subnet of Flannel cannot be overlap with host network, or host’s routing table will be confused.</p>
+<p><strong>Calico</strong> is a pure Layer-3 implementation and packets from container to outter world will tranverse NAT table. So Calico also has such restriction that container subnet cannot overlap with host network.</p>
+<p><strong>Weave</strong> doesn’t use host routing table to differentiate packages from containers, but use the <code>pcap</code> feature to deliver packages to the right place. So Weave doesn’t need to obey the subnet restriction and it’s free to allocate container a same IP address as host. Besides you can also change IP configurations inner container and the container could be reached by the new IP.</p>
+<p><strong>Docker Overlay Network</strong> allows container and host in the same subnet and achieve the isolation between them. But Docker Overlay Network rely on etcd to record routing information, so changing container’s IP address manually will mess the routing process can lead container beyond reach.</p>
+<p><strong>Brief conclusion:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Calico</th>
+<th>Flannel</th>
+<th>Weave</th>
+<th>Docker Overlay Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Container Subnet Restriction</td>
+<td>No</td>
+<td>No</td>
+<td>Yes, configurable after start</td>
+<td>Yes, not configurable after start</td>
+</tr>
+</tbody>
+</table>
+<h1 id="Conclusion">Conclusion</h1><p>So let’s give a final conclusion of all the aspects into one table. This table is one of the best references for you to choose a right multi-host networking solution.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Calico</th>
+<th>Flannel</th>
+<th>Weave</th>
+<th>Docker Overlay Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Network Model</td>
+<td>Pure Layer-3 Solution</td>
+<td>VxLAN or UDP Channel</td>
+<td>VxLAN or UDP Channel</td>
+<td>VxLAN</td>
+</tr>
+<tr>
+<td>Application Isolation</td>
+<td>Profile Schema</td>
+<td>CIDR Schema</td>
+<td>CIDR Schema</td>
+<td>CIDR Schema</td>
+</tr>
+<tr>
+<td>Protocol Support</td>
+<td>TCP, UDP, ICMP &amp; ICMPv6</td>
+<td>ALL</td>
+<td>ALL</td>
+<td>ALL</td>
+</tr>
+<tr>
+<td>Name Service</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Distributed Storage Requirements</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Encryption Channel</td>
+<td>No</td>
+<td>TLS</td>
+<td>NaCl Library</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Partially Connected Network Support</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Seperate vNIC for Container</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>IP Overlap Support</td>
+<td>No</td>
+<td>Maybe</td>
+<td>Maybe</td>
+<td>Maybe</td>
+</tr>
+<tr>
+<td>Container Subnet Restriction</td>
+<td>No</td>
+<td>No</td>
+<td>Yes, configurable after start</td>
+<td>Yes, not configurable after start</td>
+</tr>
+</tbody>
+</table>
+<p>My future plan is to test the performance of these four multi-host network solutions. Since there are too many contents on this post, I will create a new post to show the details of performance test.</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>From the previous posts, I have analysed 4 different Docker multi-host network solutions - Calico, Flannel, Weave and Docker Overlay Netw]]>
+    </summary>
+    
+      <category term="Calico" scheme="http://chunqi.li/tags/Calico/"/>
+    
+      <category term="Docker" scheme="http://chunqi.li/tags/Docker/"/>
+    
+      <category term="Flannel" scheme="http://chunqi.li/tags/Flannel/"/>
+    
+      <category term="Multi-host Network" scheme="http://chunqi.li/tags/Multi-host-Network/"/>
+    
+      <category term="Overlay Network" scheme="http://chunqi.li/tags/Overlay-Network/"/>
+    
+      <category term="Weave" scheme="http://chunqi.li/tags/Weave/"/>
+    
+      <category term="Docker Multi-host Network" scheme="http://chunqi.li/categories/Docker-Multi-host-Network/"/>
+    
+  </entry>
+  
+  <entry>
     <title><![CDATA[Weave: Network Management for Docker]]></title>
     <link href="http://chunqi.li/2015/11/14/Weave-Network-Management-for-Docker/"/>
     <id>http://chunqi.li/2015/11/14/Weave-Network-Management-for-Docker/</id>
     <published>2015-11-14T11:38:28.000Z</published>
-    <updated>2015-11-15T05:45:37.000Z</updated>
+    <updated>2015-11-15T05:46:07.000Z</updated>
     <content type="html"><![CDATA[<p><a href="https://github.com/weaveworks/weave" target="_blank" rel="external">Weave</a> is developed by <a href="http://weave.works/" target="_blank" rel="external">Weaveworks</a> for developers to control and observe Docker containers network. Similar to <a href="/2015/10/10/Flannel-for-Docker-Overlay-Network/">Flannel</a>, <a href="/2015/09/06/calico-docker/">Calico</a> and <a href="/2015/11/09/docker-multi-host-networking/">Docker Overlay Network</a>, Weave handles Docker multi-host networking and management which can merge network of Docker’s laying on different hosts. Compared with the rest three solutions, weave provides more features and choices. I will write another blog to compare these four solutions in details. In this blog, I will focus on Weave’s install, features and technology inside.</p>
 <h1 id="About_Weave">About Weave</h1><p>Weave creates a virtual network that connects Dockers deployed across multiple hosts as well as their DNS discovery. Dockers on different hosts can communicate with each other just the same as they are in the same LAN, and broadcast is also well supported in such LAN network. Besides Dockers can discover each other by hostname implemented by Weave DNS discovery module, which is not supported by other multi-host network solutions.</p>
 <p>Weave can also tranverse the firewall and operate in partially connected networks. Packets will tranvers via a shortest path to the destination host contains Docker, even though the host hides behind a firewall and the sender host cannot access destination host directly. Traffic can also be encrypted, allowing hosts connect each other via untrusted network.</p>
@@ -110,11 +489,11 @@
   </entry>
   
   <entry>
-    <title><![CDATA[Docker Multi-host Overlay Networking in Docker Engine v1.9]]></title>
+    <title><![CDATA[Docker Multi-host Overlay Networking with Etcd]]></title>
     <link href="http://chunqi.li/2015/11/09/docker-multi-host-networking/"/>
     <id>http://chunqi.li/2015/11/09/docker-multi-host-networking/</id>
     <published>2015-11-09T06:27:55.000Z</published>
-    <updated>2015-11-15T03:57:51.000Z</updated>
+    <updated>2015-11-15T06:19:48.000Z</updated>
     <content type="html"><![CDATA[<p><a href="http://docker.io/" target="_blank" rel="external">Docker</a> has released its newest version v1.9 (<a href="https://blog.docker.com/2015/11/docker-1-9-production-ready-swarm-multi-host-networking/" target="_blank" rel="external">see details</a>) on November 3, 2015. This big release put Swarm and multi-host networking into production-ready status. This blog illustrates the configuration and a few evaluations of Docker multi-host overlay networking.</p>
 <h1 id="Multi-host_Networking">Multi-host Networking</h1><p><a href="https://blog.docker.com/2015/06/networking-receives-an-upgrade/" target="_blank" rel="external">Multi-host Networking was announced as part of experimental release in June, 2015</a>, and turns to stable release of Docker Engine this month. There are already several Multi-host networking solutions for docker, such as <a href="/2015/09/06/calico-docker/">Calico</a> and <a href="/2015/10/10/Flannel-for-Docker-Overlay-Network/">Flannel</a>. Docker multi-host networking uses VXLAN-based solution with the help of <code>libnetwork</code> and <code>libkv</code> library. So the <code>overlay</code> network requires a valid key-value store service to exchange informations between different docker engines. Docker implements a built-in <a href="https://datatracker.ietf.org/doc/rfc7348/" target="_blank" rel="external">VXLAN-based overlay network driver</a> in <code>libnetwork</code> library to support a wide range virtual network between multiple hosts.</p>
 <h1 id="Prerequisite">Prerequisite</h1><h2 id="Environment_Preparation">Environment Preparation</h2><p>Before using Docker overlay networking, check the version of docker with <code>docker -v</code> to confirm that docker version is no less than v1.9. In this blog I prepare an environment with two Linux nodes (node1/node2) with IP 192.168.236.130/131 and connect them physically or virtually, and confirm they have network access to each other.</p>
@@ -163,7 +542,11 @@ TCP window size: <span class="number">81.0</span> KByte (<span class="keyword">d
     
       <category term="Docker" scheme="http://chunqi.li/tags/Docker/"/>
     
+      <category term="Etcd" scheme="http://chunqi.li/tags/Etcd/"/>
+    
       <category term="Multi-host Network" scheme="http://chunqi.li/tags/Multi-host-Network/"/>
+    
+      <category term="Overlay Network" scheme="http://chunqi.li/tags/Overlay-Network/"/>
     
       <category term="VXLAN" scheme="http://chunqi.li/tags/VXLAN/"/>
     
@@ -176,7 +559,7 @@ TCP window size: <span class="number">81.0</span> KByte (<span class="keyword">d
     <link href="http://chunqi.li/2015/10/10/Flannel-for-Docker-Overlay-Network/"/>
     <id>http://chunqi.li/2015/10/10/Flannel-for-Docker-Overlay-Network/</id>
     <published>2015-10-10T10:03:49.000Z</published>
-    <updated>2015-11-15T03:57:51.000Z</updated>
+    <updated>2015-11-16T03:52:45.000Z</updated>
     <content type="html"><![CDATA[<p>In previous post, some overlay network technologies for Docker are analysised. On this post let’s focus on <a href="https://github.com/coreos/flannel" target="_blank" rel="external">Flannel</a>, a virtual network that creates subnet work Dockers across different hosts.</p>
 <h1 id="Introduction_to_Flannel">Introduction to Flannel</h1><p><a href="https://github.com/coreos/flannel" target="_blank" rel="external">Flannel</a>, similar to <a href="https://github.com/projectcalico/calico-docker" target="_blank" rel="external">Calico</a>, <a href="https://datatracker.ietf.org/doc/rfc7348/" target="_blank" rel="external">VXLAN</a> and <a href="https://github.com/weaveworks/weave" target="_blank" rel="external">Weave</a>, provides a configurable virtual overlay network for Docker. Flannel runs an agent, flanneld, on each host and is responsible for allocating subnet lease out of a preconfigured address space. Flannel uses <a href="https://github.com/coreos/etcd" target="_blank" rel="external">etcd</a> to store network configurations. I copied this architecture image from <a href="https://github.com/coreos/flannel" target="_blank" rel="external">Flannel GitHub page</a> to illustrate the details of the path a packet take as it tranverse the overlay network.</p>
 <img src="/images/flannel-01.png">
@@ -229,8 +612,7 @@ TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">d
 [  <span class="number">3</span>] local <span class="number">10.15</span><span class="number">.240</span><span class="number">.2</span> port <span class="number">57496</span> connected with <span class="number">10.10</span><span class="number">.160</span><span class="number">.2</span> port <span class="number">5001</span>
 [ ID] Interval       Transfer     Bandwidth
 [  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec   <span class="number">418</span> MBytes   <span class="number">351</span> Mbits/sec
-</code></pre><p><strong>The performace is so bad compared with native!!!!!</strong> I can’t figure out why the performance degrades too much with Flannel. Since Calico and Docker Multi-host Network can achieve more than 80% performance compared with native, Flannel does a aweful job apparently. If anyone knows why, please email me or comments under this blog.</p>
-<p>The performance of Dockers on the same host is pretty good.</p>
+</code></pre><p>The performance of Dockers on the same host is pretty good.</p>
 <pre><code>root@<span class="number">93</span>c451432761:~<span class="preprocessor"># iperf -c <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span></span>
 ------------------------------------------------------------
 Client connecting to <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span>, TCP port <span class="number">5001</span>
@@ -239,7 +621,22 @@ TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">d
 [  <span class="number">3</span>] local <span class="number">10.15</span><span class="number">.240</span><span class="number">.2</span> port <span class="number">38099</span> connected with <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span> port <span class="number">5001</span>
 [ ID] Interval       Transfer     Bandwidth
 [  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec  <span class="number">39.2</span> GBytes  <span class="number">33.7</span> Gbits/sec
-</code></pre><h1 id="References">References</h1><p>[1] Flannel code base, <a href="https://github.com/coreos/flannel" target="_blank" rel="external">https://github.com/coreos/flannel</a><br>[2] Using coreos flannel for docker networking, <a href="http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking" target="_blank" rel="external">http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking</a></p>
+</code></pre><p><del><strong>The performace is so bad compared with native!!!!!</strong> I can’t figure out why the performance degrades too much with Flannel. Since Calico and Docker Multi-host Network can achieve more than 80% performance compared with native, Flannel does a aweful job apparently. If anyone knows why, please email me or comments under this blog.</del></p>
+<p>After read through the configuration documents of Flannel, I found that flannel support two backends: UDP backend and VxLAN backend. Try VxLAN backend and the speed is much more fast and close to native performance.</p>
+<h1 id="UDP_and_VxLAN_backends">UDP and VxLAN backends</h1><p>There are two different backends supported by Flannel. The previous configuration on this blog uses UDP backend, which is a pretty slow solution because all the packets are encrypted in userspace. VxLAN backend uses Linux Kernel VxLAN support as well as some hardware features to achieve a much more faster network.</p>
+<p>It’s easy to use VxLAN backend. When configuring Etcd, just define the <code>backend</code> block with <code>vxlan</code>.</p>
+<figure class="highlight bash"><figcaption><span>Config Etcd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">./etcdctl <span class="built_in">set</span> /coreos.com/network/config 	\</span><br><span class="line">true<span class="string">'&#123;"Network": "10.0.0.0/8",				\</span><br><span class="line">true"SubnetLen": 20,						\</span><br><span class="line">true"SubnetMin": "10.10.0.0",				\</span><br><span class="line">true"SubnetMax": "10.99.0.0",				\</span><br><span class="line">true"Backend": &#123;							\</span><br><span class="line">truetrue"Type": "vxlan"&#125;&#125; '</span></span><br></pre></td></tr></table></figure>
+<p>With VxLAN backend, the iperf result of two containers on different hosts are as follows:</p>
+<pre><code>root@<span class="number">93</span>c451432761:~<span class="preprocessor"># iperf -c <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span></span>
+------------------------------------------------------------
+Client connecting to <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span>, TCP port <span class="number">5001</span>
+TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">default</span>)
+------------------------------------------------------------
+[  <span class="number">3</span>] local <span class="number">10.15</span><span class="number">.240</span><span class="number">.2</span> port <span class="number">38099</span> connected with <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span> port <span class="number">5001</span>
+[ ID] Interval       Transfer     Bandwidth
+[  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec  <span class="number">1.80</span> GBytes  <span class="number">1.56</span> Gbits/sec
+</code></pre><p>This is an acceptable result with about 80% performance compared with native network.</p>
+<h1 id="References">References</h1><p>[1] Flannel code base, <a href="https://github.com/coreos/flannel" target="_blank" rel="external">https://github.com/coreos/flannel</a><br>[2] Using coreos flannel for docker networking, <a href="http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking" target="_blank" rel="external">http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking</a></p>
 ]]></content>
     <summary type="html">
     <![CDATA[<p>In previous post, some overlay network technologies for Docker are analysised. On this post let’s focus on <a href="https://github.com/co]]>

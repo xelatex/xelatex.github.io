@@ -62,7 +62,7 @@ Introduct">
 <meta property="og:description" content="In previous post, some overlay network technologies for Docker are analysised. On this post let’s focus on Flannel, a virtual network that creates subnet work Dockers across different hosts.
 Introduct">
 <meta property="og:image" content="http://chunqi.li/images/flannel-01.png">
-<meta property="og:updated_time" content="2015-11-15T03:57:51.000Z">
+<meta property="og:updated_time" content="2015-11-16T03:52:45.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Flannel for Docker Overlay Network">
 <meta name="twitter:description" content="In previous post, some overlay network technologies for Docker are analysised. On this post let’s focus on Flannel, a virtual network that creates subnet work Dockers across different hosts.
@@ -344,8 +344,7 @@ TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">d
 [  <span class="number">3</span>] local <span class="number">10.15</span><span class="number">.240</span><span class="number">.2</span> port <span class="number">57496</span> connected with <span class="number">10.10</span><span class="number">.160</span><span class="number">.2</span> port <span class="number">5001</span>
 [ ID] Interval       Transfer     Bandwidth
 [  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec   <span class="number">418</span> MBytes   <span class="number">351</span> Mbits/sec
-</code></pre><p><strong>The performace is so bad compared with native!!!!!</strong> I can’t figure out why the performance degrades too much with Flannel. Since Calico and Docker Multi-host Network can achieve more than 80% performance compared with native, Flannel does a aweful job apparently. If anyone knows why, please email me or comments under this blog.</p>
-<p>The performance of Dockers on the same host is pretty good.</p>
+</code></pre><p>The performance of Dockers on the same host is pretty good.</p>
 <pre><code>root@<span class="number">93</span>c451432761:~<span class="preprocessor"># iperf -c <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span></span>
 ------------------------------------------------------------
 Client connecting to <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span>, TCP port <span class="number">5001</span>
@@ -354,7 +353,22 @@ TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">d
 [  <span class="number">3</span>] local <span class="number">10.15</span><span class="number">.240</span><span class="number">.2</span> port <span class="number">38099</span> connected with <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span> port <span class="number">5001</span>
 [ ID] Interval       Transfer     Bandwidth
 [  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec  <span class="number">39.2</span> GBytes  <span class="number">33.7</span> Gbits/sec
-</code></pre><h1 id="References">References</h1><p>[1] Flannel code base, <a href="https://github.com/coreos/flannel" target="_blank" rel="external">https://github.com/coreos/flannel</a><br>[2] Using coreos flannel for docker networking, <a href="http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking" target="_blank" rel="external">http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking</a></p>
+</code></pre><p><del><strong>The performace is so bad compared with native!!!!!</strong> I can’t figure out why the performance degrades too much with Flannel. Since Calico and Docker Multi-host Network can achieve more than 80% performance compared with native, Flannel does a aweful job apparently. If anyone knows why, please email me or comments under this blog.</del></p>
+<p>After read through the configuration documents of Flannel, I found that flannel support two backends: UDP backend and VxLAN backend. Try VxLAN backend and the speed is much more fast and close to native performance.</p>
+<h1 id="UDP_and_VxLAN_backends">UDP and VxLAN backends</h1><p>There are two different backends supported by Flannel. The previous configuration on this blog uses UDP backend, which is a pretty slow solution because all the packets are encrypted in userspace. VxLAN backend uses Linux Kernel VxLAN support as well as some hardware features to achieve a much more faster network.</p>
+<p>It’s easy to use VxLAN backend. When configuring Etcd, just define the <code>backend</code> block with <code>vxlan</code>.</p>
+<figure class="highlight bash"><figcaption><span>Config Etcd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">./etcdctl <span class="built_in">set</span> /coreos.com/network/config 	\</span><br><span class="line">true<span class="string">'&#123;"Network": "10.0.0.0/8",				\</span><br><span class="line">true"SubnetLen": 20,						\</span><br><span class="line">true"SubnetMin": "10.10.0.0",				\</span><br><span class="line">true"SubnetMax": "10.99.0.0",				\</span><br><span class="line">true"Backend": &#123;							\</span><br><span class="line">truetrue"Type": "vxlan"&#125;&#125; '</span></span><br></pre></td></tr></table></figure>
+<p>With VxLAN backend, the iperf result of two containers on different hosts are as follows:</p>
+<pre><code>root@<span class="number">93</span>c451432761:~<span class="preprocessor"># iperf -c <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span></span>
+------------------------------------------------------------
+Client connecting to <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span>, TCP port <span class="number">5001</span>
+TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">default</span>)
+------------------------------------------------------------
+[  <span class="number">3</span>] local <span class="number">10.15</span><span class="number">.240</span><span class="number">.2</span> port <span class="number">38099</span> connected with <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span> port <span class="number">5001</span>
+[ ID] Interval       Transfer     Bandwidth
+[  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec  <span class="number">1.80</span> GBytes  <span class="number">1.56</span> Gbits/sec
+</code></pre><p>This is an acceptable result with about 80% performance compared with native network.</p>
+<h1 id="References">References</h1><p>[1] Flannel code base, <a href="https://github.com/coreos/flannel" target="_blank" rel="external">https://github.com/coreos/flannel</a><br>[2] Using coreos flannel for docker networking, <a href="http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking" target="_blank" rel="external">http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking</a></p>
 </span>
       
     </div>
@@ -384,8 +398,8 @@ TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">d
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2015/11/09/docker-multi-host-networking/" rel="prev" title="Docker Multi-host Overlay Networking in Docker Engine v1.9">
-                Docker Multi-host Overlay Networking in Docker Engine v1.9 <i class="fa fa-chevron-right"></i>
+              <a href="/2015/11/09/docker-multi-host-networking/" rel="prev" title="Docker Multi-host Overlay Networking with Etcd">
+                Docker Multi-host Overlay Networking with Etcd <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -458,7 +472,7 @@ TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">d
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">7</span>
+              <span class="site-state-item-count">8</span>
               <span class="site-state-item-name">posts</span>
             </a>
           </div>
@@ -472,7 +486,7 @@ TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">d
 
           <div class="site-state-item site-state-tags">
             <a href="/tags">
-              <span class="site-state-item-count">12</span>
+              <span class="site-state-item-count">14</span>
               <span class="site-state-item-name">tags</span>
               </a>
           </div>
@@ -553,7 +567,7 @@ TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">d
               
             
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Introduction_to_Flannel"><span class="nav-number">1.</span> <span class="nav-text">Introduction to Flannel</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Config_Etcd"><span class="nav-number">2.</span> <span class="nav-text">Config Etcd</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Download_and_Run_Etcd"><span class="nav-number">2.1.</span> <span class="nav-text">Download and Run Etcd</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Config_Etcd-1"><span class="nav-number">2.2.</span> <span class="nav-text">Config Etcd</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Build_and_Run_Flannel"><span class="nav-number">3.</span> <span class="nav-text">Build and Run Flannel</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Build_Flannel"><span class="nav-number">3.1.</span> <span class="nav-text">Build Flannel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Run_Flannel"><span class="nav-number">3.2.</span> <span class="nav-text">Run Flannel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Start_Docker"><span class="nav-number">3.3.</span> <span class="nav-text">Start Docker</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Simple_Performance_Test"><span class="nav-number">4.</span> <span class="nav-text">Simple Performance Test</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#References"><span class="nav-number">5.</span> <span class="nav-text">References</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Introduction_to_Flannel"><span class="nav-number">1.</span> <span class="nav-text">Introduction to Flannel</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Config_Etcd"><span class="nav-number">2.</span> <span class="nav-text">Config Etcd</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Download_and_Run_Etcd"><span class="nav-number">2.1.</span> <span class="nav-text">Download and Run Etcd</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Config_Etcd-1"><span class="nav-number">2.2.</span> <span class="nav-text">Config Etcd</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Build_and_Run_Flannel"><span class="nav-number">3.</span> <span class="nav-text">Build and Run Flannel</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Build_Flannel"><span class="nav-number">3.1.</span> <span class="nav-text">Build Flannel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Run_Flannel"><span class="nav-number">3.2.</span> <span class="nav-text">Run Flannel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Start_Docker"><span class="nav-number">3.3.</span> <span class="nav-text">Start Docker</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Simple_Performance_Test"><span class="nav-number">4.</span> <span class="nav-text">Simple Performance Test</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#UDP_and_VxLAN_backends"><span class="nav-number">5.</span> <span class="nav-text">UDP and VxLAN backends</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#References"><span class="nav-number">6.</span> <span class="nav-text">References</span></a></li></ol></div>
             
           </div>
           <div class="post-toc-indicator-bottom post-toc-indicator">
