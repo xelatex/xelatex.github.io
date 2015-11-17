@@ -4,7 +4,7 @@
   
   <link href="/atom.xml" rel="self"/>
   <link href="http://chunqi.li/"/>
-  <updated>2015-11-16T05:11:52.000Z</updated>
+  <updated>2015-11-17T05:08:22.000Z</updated>
   <id>http://chunqi.li/</id>
   
   <author>
@@ -19,7 +19,7 @@
     <link href="http://chunqi.li/2015/11/15/Battlefield-Calico-Flannel-Weave-and-Docker-Overlay-Network/"/>
     <id>http://chunqi.li/2015/11/15/Battlefield-Calico-Flannel-Weave-and-Docker-Overlay-Network/</id>
     <published>2015-11-15T06:10:17.000Z</published>
-    <updated>2015-11-16T05:11:52.000Z</updated>
+    <updated>2015-11-17T05:08:22.000Z</updated>
     <content type="html"><![CDATA[<p>From the previous posts, I have analysed 4 different Docker multi-host network solutions - Calico, Flannel, Weave and Docker Overlay Network. You can see more details on how to install, config and tune features of them from previous posts:</p>
 <ul>
 <li><a href="/2015/09/06/calico-docker/">Calico: A Solution of Multi-host Network For Docker</a></li>
@@ -215,8 +215,9 @@
 </tr>
 </tbody>
 </table>
-<h1 id="Seperate_vNIC_for_Container">Seperate vNIC for Container</h1><p>Since <strong>Flannel</strong>, <strong>Weave</strong> and <strong>Docker Overlay Network</strong> create a bridged device and a veth inner containers, they create a seperate vNIC for containers. Routing table of container is also changed, thus bypass all packets of clustered network to this newly created NIC. Other connections, such as google.com, will route to the original vNIC.</p>
+<h1 id="Seperate_vNIC_for_Container">Seperate vNIC for Container</h1><p>Since <strong>Weave</strong> and <strong>Docker Overlay Network</strong> create a bridged device and a veth inner containers, they create a seperate vNIC for containers. Routing table of container is also changed, thus bypass all packets of clustered network to this newly created NIC. Other connections, such as google.com, will route to the original vNIC.</p>
 <p><strong>Calico</strong> can use a unified vNIC for container because it’s a pure Layer-3 solution. Calico can configure NAT for out-going requests and forward subnet packages to other Calico peers. Calico can also use Docker bridged NIC for out-going requests with some manual configuration inner containers. In this way, you need to add <code>-cap-add=Net_Admin</code> parameter when execute <code>docker run</code>.</p>
+<p><strong>Flannel</strong> directly use docker local bridge <code>docker0</code> to handle all the transportation, so containers with Flannel network will only see one vNIC inside.</p>
 <p><strong>Brief conclusion:</strong></p>
 <table>
 <thead>
@@ -232,7 +233,7 @@
 <tr>
 <td>Seperate vNIC for Container</td>
 <td>No</td>
-<td>Yes</td>
+<td>No</td>
 <td>Yes</td>
 <td>yes</td>
 </tr>
@@ -351,7 +352,7 @@
 <tr>
 <td>Seperate vNIC for Container</td>
 <td>No</td>
-<td>Yes</td>
+<td>No</td>
 <td>Yes</td>
 <td>yes</td>
 </tr>
@@ -559,7 +560,7 @@ TCP window size: <span class="number">81.0</span> KByte (<span class="keyword">d
     <link href="http://chunqi.li/2015/10/10/Flannel-for-Docker-Overlay-Network/"/>
     <id>http://chunqi.li/2015/10/10/Flannel-for-Docker-Overlay-Network/</id>
     <published>2015-10-10T10:03:49.000Z</published>
-    <updated>2015-11-17T02:31:44.000Z</updated>
+    <updated>2015-11-17T04:56:04.000Z</updated>
     <content type="html"><![CDATA[<p>In previous post, some overlay network technologies for Docker are analysised. On this post let’s focus on <a href="https://github.com/coreos/flannel" target="_blank" rel="external">Flannel</a>, a virtual network that creates subnet work Dockers across different hosts.</p>
 <h1 id="Introduction_to_Flannel">Introduction to Flannel</h1><p><a href="https://github.com/coreos/flannel" target="_blank" rel="external">Flannel</a>, similar to <a href="https://github.com/projectcalico/calico-docker" target="_blank" rel="external">Calico</a>, <a href="https://datatracker.ietf.org/doc/rfc7348/" target="_blank" rel="external">VXLAN</a> and <a href="https://github.com/weaveworks/weave" target="_blank" rel="external">Weave</a>, provides a configurable virtual overlay network for Docker. Flannel runs an agent, flanneld, on each host and is responsible for allocating subnet lease out of a preconfigured address space. Flannel uses <a href="https://github.com/coreos/etcd" target="_blank" rel="external">etcd</a> to store network configurations. I copied this architecture image from <a href="https://github.com/coreos/flannel" target="_blank" rel="external">Flannel GitHub page</a> to illustrate the details of the path a packet take as it tranverse the overlay network.</p>
 <img src="/images/flannel-01.png">
@@ -632,8 +633,14 @@ TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">d
 <p>After read through the configuration documents of Flannel, I found that flannel support two backends: UDP backend and VxLAN backend. Try VxLAN backend and the speed is much more fast and close to native performance.</p>
 <h1 id="UDP_and_VxLAN_backends">UDP and VxLAN backends</h1><p>There are two different backends supported by Flannel. The previous configuration on this blog uses UDP backend, which is a pretty slow solution because all the packets are encrypted in userspace. VxLAN backend uses Linux Kernel VxLAN support as well as some hardware features to achieve a much more faster network.</p>
 <p>It’s easy to use VxLAN backend. When configuring Etcd, just define the <code>backend</code> block with <code>vxlan</code>.</p>
-<figure class="highlight bash"><figcaption><span>Config Etcd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">./etcdctl <span class="built_in">set</span> /coreos.com/network/config 	\</span><br><span class="line">true<span class="string">'&#123;"Network": "10.0.0.0/8",				\</span><br><span class="line">true"SubnetLen": 20,						\</span><br><span class="line">true"SubnetMin": "10.10.0.0",				\</span><br><span class="line">true"SubnetMax": "10.99.0.0",				\</span><br><span class="line">true"Backend": &#123;							\</span><br><span class="line">truetrue"Type": "vxlan"&#125;&#125; '</span></span><br></pre></td></tr></table></figure>
-<p>With VxLAN backend, the iperf result of two containers on different hosts are as follows:</p>
+<pre><code>./etcdctl <span class="keyword">set</span> /coreos.com/network/config     \
+    '{<span class="string">"Network"</span>: <span class="string">"10.0.0.0/8"</span>,                \
+    <span class="string">"SubnetLen"</span>: <span class="number">20</span>,                        \
+    <span class="string">"SubnetMin"</span>: <span class="string">"10.10.0.0"</span>,                \
+    <span class="string">"SubnetMax"</span>: <span class="string">"10.99.0.0"</span>,                \
+    <span class="string">"Backend"</span>: {                            \
+        <span class="string">"Type"</span>: <span class="string">"vxlan"</span>}} '
+</code></pre><p>With VxLAN backend, the iperf result of two containers on different hosts are as follows:</p>
 <pre><code>root@<span class="number">93</span>c451432761:~<span class="preprocessor"># iperf -c <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span></span>
 ------------------------------------------------------------
 Client connecting to <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span>, TCP port <span class="number">5001</span>

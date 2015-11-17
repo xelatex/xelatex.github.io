@@ -60,7 +60,7 @@
 <meta property="og:site_name" content="Arthur Chunqi Li's Blog">
 <meta property="og:description" content="From the previous posts, I have analysed 4 different Docker multi-host network solutions - Calico, Flannel, Weave and Docker Overlay Network. You can see more details on how to install, config and tun">
 <meta property="og:image" content="http://chunqi.li/images/wave-topology.png">
-<meta property="og:updated_time" content="2015-11-16T05:11:52.000Z">
+<meta property="og:updated_time" content="2015-11-17T05:08:22.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Battlefield: Calico, Flannel, Weave and Docker Overlay Network">
 <meta name="twitter:description" content="From the previous posts, I have analysed 4 different Docker multi-host network solutions - Calico, Flannel, Weave and Docker Overlay Network. You can see more details on how to install, config and tun">
@@ -484,8 +484,9 @@
 </tr>
 </tbody>
 </table>
-<h1 id="Seperate_vNIC_for_Container">Seperate vNIC for Container</h1><p>Since <strong>Flannel</strong>, <strong>Weave</strong> and <strong>Docker Overlay Network</strong> create a bridged device and a veth inner containers, they create a seperate vNIC for containers. Routing table of container is also changed, thus bypass all packets of clustered network to this newly created NIC. Other connections, such as google.com, will route to the original vNIC.</p>
+<h1 id="Seperate_vNIC_for_Container">Seperate vNIC for Container</h1><p>Since <strong>Weave</strong> and <strong>Docker Overlay Network</strong> create a bridged device and a veth inner containers, they create a seperate vNIC for containers. Routing table of container is also changed, thus bypass all packets of clustered network to this newly created NIC. Other connections, such as google.com, will route to the original vNIC.</p>
 <p><strong>Calico</strong> can use a unified vNIC for container because it’s a pure Layer-3 solution. Calico can configure NAT for out-going requests and forward subnet packages to other Calico peers. Calico can also use Docker bridged NIC for out-going requests with some manual configuration inner containers. In this way, you need to add <code>-cap-add=Net_Admin</code> parameter when execute <code>docker run</code>.</p>
+<p><strong>Flannel</strong> directly use docker local bridge <code>docker0</code> to handle all the transportation, so containers with Flannel network will only see one vNIC inside.</p>
 <p><strong>Brief conclusion:</strong></p>
 <table>
 <thead>
@@ -501,7 +502,7 @@
 <tr>
 <td>Seperate vNIC for Container</td>
 <td>No</td>
-<td>Yes</td>
+<td>No</td>
 <td>Yes</td>
 <td>yes</td>
 </tr>
@@ -620,7 +621,7 @@
 <tr>
 <td>Seperate vNIC for Container</td>
 <td>No</td>
-<td>Yes</td>
+<td>No</td>
 <td>Yes</td>
 <td>yes</td>
 </tr>

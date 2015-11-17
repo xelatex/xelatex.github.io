@@ -62,7 +62,7 @@ Introduct">
 <meta property="og:description" content="In previous post, some overlay network technologies for Docker are analysised. On this post let’s focus on Flannel, a virtual network that creates subnet work Dockers across different hosts.
 Introduct">
 <meta property="og:image" content="http://chunqi.li/images/flannel-01.png">
-<meta property="og:updated_time" content="2015-11-17T02:31:44.000Z">
+<meta property="og:updated_time" content="2015-11-17T04:56:04.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Flannel for Docker Overlay Network">
 <meta name="twitter:description" content="In previous post, some overlay network technologies for Docker are analysised. On this post let’s focus on Flannel, a virtual network that creates subnet work Dockers across different hosts.
@@ -364,8 +364,14 @@ TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">d
 <p>After read through the configuration documents of Flannel, I found that flannel support two backends: UDP backend and VxLAN backend. Try VxLAN backend and the speed is much more fast and close to native performance.</p>
 <h1 id="UDP_and_VxLAN_backends">UDP and VxLAN backends</h1><p>There are two different backends supported by Flannel. The previous configuration on this blog uses UDP backend, which is a pretty slow solution because all the packets are encrypted in userspace. VxLAN backend uses Linux Kernel VxLAN support as well as some hardware features to achieve a much more faster network.</p>
 <p>It’s easy to use VxLAN backend. When configuring Etcd, just define the <code>backend</code> block with <code>vxlan</code>.</p>
-<figure class="highlight bash"><figcaption><span>Config Etcd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">./etcdctl <span class="built_in">set</span> /coreos.com/network/config 	\</span><br><span class="line">true<span class="string">'&#123;"Network": "10.0.0.0/8",				\</span><br><span class="line">true"SubnetLen": 20,						\</span><br><span class="line">true"SubnetMin": "10.10.0.0",				\</span><br><span class="line">true"SubnetMax": "10.99.0.0",				\</span><br><span class="line">true"Backend": &#123;							\</span><br><span class="line">truetrue"Type": "vxlan"&#125;&#125; '</span></span><br></pre></td></tr></table></figure>
-<p>With VxLAN backend, the iperf result of two containers on different hosts are as follows:</p>
+<pre><code>./etcdctl <span class="keyword">set</span> /coreos.com/network/config     \
+    '{<span class="string">"Network"</span>: <span class="string">"10.0.0.0/8"</span>,                \
+    <span class="string">"SubnetLen"</span>: <span class="number">20</span>,                        \
+    <span class="string">"SubnetMin"</span>: <span class="string">"10.10.0.0"</span>,                \
+    <span class="string">"SubnetMax"</span>: <span class="string">"10.99.0.0"</span>,                \
+    <span class="string">"Backend"</span>: {                            \
+        <span class="string">"Type"</span>: <span class="string">"vxlan"</span>}} '
+</code></pre><p>With VxLAN backend, the iperf result of two containers on different hosts are as follows:</p>
 <pre><code>root@<span class="number">93</span>c451432761:~<span class="preprocessor"># iperf -c <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span></span>
 ------------------------------------------------------------
 Client connecting to <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span>, TCP port <span class="number">5001</span>
