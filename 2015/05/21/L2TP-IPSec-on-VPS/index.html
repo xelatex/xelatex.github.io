@@ -291,18 +291,18 @@
         <span itemprop="articleBody"><p>L2TP+IPSec is another way to setup VPN on a VPS. L2TP consumes 1701 TCP port to maintain connection and 500/4500 UDP to transfer data. It’s very easy to implement L2TP and IPSec on a Ubuntu 14.04 server.</p>
 <p>Before setting up L2TP/IPSec environment, you need to enable PPP support for VPS. See details on section <strong>“Enable PPP Support of VPS”</strong> of my previous post “<a href="/2015/05/20/Setup-PPTP-Server-on-a-VPS/">Setup PPTP Server on a VPS</a>“ to enable PPP support on RamNode VPS.</p>
 <p>When I first installed xl2tpd and openswan, it occured to me the following errors and refused my iPhone VPN connection:</p>
-<pre><code><span class="type">May</span> <span class="number">19</span> <span class="number">05</span>:<span class="number">48</span>:<span class="number">46</span> xxx xl2tpd[<span class="number">1343</span>]: result_code_avp: <span class="literal">result</span> code endianness fix <span class="keyword">for</span> buggy <span class="type">Apple</span> client. network=<span class="number">768</span>, le=<span class="number">3</span>
+<pre><code>May 19 05:48:46 xxx xl2tpd[1343]: result_code_avp: result code endianness fix for buggy Apple client. network=768, le=3
 </code></pre><p>If you get the same error message, just follow step by step with me to setup L2TP+IPSec VPN.</p>
-<h1 id="Install_xl2tpd_and_openwan">Install xl2tpd and openwan</h1><p>Here I use openswan as my IPSec server. Just use the following commands to install xl2tpd and openswan:</p>
+<h1 id="Install_xl2tpd_and_openwan"><a href="#Install_xl2tpd_and_openwan" class="headerlink" title="Install xl2tpd and openwan"></a>Install xl2tpd and openwan</h1><p>Here I use openswan as my IPSec server. Just use the following commands to install xl2tpd and openswan:</p>
 <figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install openswan ppp xl2tpd</span><br></pre></td></tr></table></figure>
-<h1 id="Configure_xl2tpd">Configure xl2tpd</h1><p>We need to configure two files for xl2tpd: <code>/etc/xl2tpd/xl2tpd.conf</code> and <code>/etc/ppp/options.xl2tpd</code></p>
+<h1 id="Configure_xl2tpd"><a href="#Configure_xl2tpd" class="headerlink" title="Configure xl2tpd"></a>Configure xl2tpd</h1><p>We need to configure two files for xl2tpd: <code>/etc/xl2tpd/xl2tpd.conf</code> and <code>/etc/ppp/options.xl2tpd</code></p>
 <p>Here’s an example of <code>/etc/xl2tpd/xl2tpd.conf</code> :</p>
 <pre><code>[global]
-listen-addr = <span class="number">106.186</span><span class="number">.127</span><span class="number">.239</span>
+listen-addr = 106.186.127.239
 
-[lns <span class="keyword">default</span>]
-ip range = <span class="number">10.20</span><span class="number">.0</span><span class="number">.2</span>-<span class="number">10.20</span><span class="number">.0</span><span class="number">.100</span>
-local ip = <span class="number">10.20</span><span class="number">.0</span><span class="number">.1</span>
+[lns default]
+ip range = 10.20.0.2-10.20.0.100
+local ip = 10.20.0.1
 assign ip = yes
 length bit = yes
 refuse pap = yes
@@ -310,65 +310,65 @@ require authentication = yes
 pppoptfile = /etc/ppp/options.xl2tpd
 </code></pre><p>“ip range” defined IPs distributed to the client side and “local ip” is assigned to the server side. pppoptfile defines the detailed config file for xl2tpd.</p>
 <p>Then create file <code>/etc/ppp/options.xl2tpd</code> and add:</p>
-<pre><code>ms-dns <span class="number">8.8</span><span class="number">.8</span><span class="number">.8</span>
-ms-dns <span class="number">8.8</span><span class="number">.4</span><span class="number">.4</span>
+<pre><code>ms-dns 8.8.8.8
+ms-dns 8.8.4.4
 noccp
-asyncmap <span class="number">0</span>
+asyncmap 0
 auth
 crtscts
 lock
 hide-password
 modem
-mru <span class="number">1200</span>
+mru 1200
 nodefaultroute
 debug
-mtu <span class="number">1200</span>
+mtu 1200
 proxyarp
-lcp-echo-interval <span class="number">30</span>
-lcp-echo-failure <span class="number">4</span>
+lcp-echo-interval 30
+lcp-echo-failure 4
 ipcp-accept-local
 ipcp-accept-remote
 noipx
-idle <span class="number">1800</span>
-connect-delay <span class="number">5000</span>
-</code></pre><h1 id="Configure_OpenSwan_IPSec">Configure OpenSwan IPSec</h1><p>IPSec acts as a role to provide a secure routine for transferring data. OpenSwan is a good choice to set up a simple IPSec. Note that there are many IPSec choices and they should be exclusively installed in your system. And whatever IPSec server you installed, the command to call them is only “ipsec“. Use the following command to identify which IPSec service you’re using now.</p>
-<pre><code>ipsec <span class="comment">--version</span>
+idle 1800
+connect-delay 5000
+</code></pre><h1 id="Configure_OpenSwan_IPSec"><a href="#Configure_OpenSwan_IPSec" class="headerlink" title="Configure OpenSwan IPSec"></a>Configure OpenSwan IPSec</h1><p>IPSec acts as a role to provide a secure routine for transferring data. OpenSwan is a good choice to set up a simple IPSec. Note that there are many IPSec choices and they should be exclusively installed in your system. And whatever IPSec server you installed, the command to call them is only “ipsec“. Use the following command to identify which IPSec service you’re using now.</p>
+<pre><code>ipsec --version
 </code></pre><p>The config file for OpenSwan is /etc/ipsec.conf. Actually this file name is identical for all IPSec service, which the content differs anyway. When you installed another IPSec service with apt-get, you need to change the format and contents of this file.</p>
 <p>Here’s an example of this file:</p>
-<pre><code>version <span class="number">2.0</span>
+<pre><code>version 2.0
 
 config setup
     dumpdir=/var/run/pluto/
     nat_traversal=yes
-    virtual_private=%v4:<span class="number">10.0</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">8</span>,%v4:<span class="number">192.168</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">16</span>,%v4:<span class="number">172.16</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">12</span>,%v4:<span class="number">25.0</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">8</span>,%v6:fd00::/<span class="number">8</span>,%v6:fe80::/<span class="number">10</span>
+    virtual_private=%v4:10.0.0.0/8,%v4:192.168.0.0/16,%v4:172.16.0.0/12,%v4:25.0.0.0/8,%v6:fd00::/8,%v6:fe80::/10
     protostack=netkey
     force_keepalive=yes
-    keep_alive=<span class="number">60</span>
+    keep_alive=60
 
 conn l2tp-psk
     authby=secret
     pfs=no
-    <span class="keyword">auto</span>=add
-    keyingtries=<span class="number">3</span>
+    auto=add
+    keyingtries=3
     type=transport
-    left=<span class="number">1.2</span><span class="number">.3</span><span class="number">.4</span> <span class="preprocessor"># change to your own IP</span>
-    leftprotoport=<span class="number">17</span>/<span class="number">1701</span>
+    left=1.2.3.4 # change to your own IP
+    leftprotoport=17/1701
     right=%any
-    rightprotoport=<span class="number">17</span>/%any
+    rightprotoport=17/%any
 </code></pre><p>The “virtual_private” line shows which network could use this IPSec routine, leave it as what it is. The only line you need to change is “left”, which should be your VPS IP address.</p>
 <p>Then we need to create and edit file <code>/etc/ipsec.secrets</code>.</p>
-<pre><code>: PSK <span class="string">"sharedpassword"</span>
+<pre><code>: PSK &quot;sharedpassword&quot;
 </code></pre><p><strong>Note that there’s blank before and after colon!</strong></p>
 <p>“sharedpassword” should be used as the “shared secret” when you connect L2TP.</p>
-<h1 id="Add_L2TP_VPN_account">Add L2TP VPN account</h1><p>Edit file <code>/etc/ppp/chap-secrets</code>, which is the same as PPTP server. Use the format like this:</p>
-<pre><code>yourname <span class="keyword">*</span> yourpassword <span class="keyword">*</span>
-</code></pre><h1 id="Setup_IPv4_forwarding_and_iptables_rules">Setup IPv4 forwarding and iptables rules</h1><p>It’s also the same as PPTP server, you just need to edit file <code>/etc/sysctl.conf</code> and add (or change) a following line:</p>
-<pre><code>net<span class="class">.ipv4</span><span class="class">.ip_forward</span>=<span class="number">1</span>
+<h1 id="Add_L2TP_VPN_account"><a href="#Add_L2TP_VPN_account" class="headerlink" title="Add L2TP VPN account"></a>Add L2TP VPN account</h1><p>Edit file <code>/etc/ppp/chap-secrets</code>, which is the same as PPTP server. Use the format like this:</p>
+<pre><code>yourname * yourpassword *
+</code></pre><h1 id="Setup_IPv4_forwarding_and_iptables_rules"><a href="#Setup_IPv4_forwarding_and_iptables_rules" class="headerlink" title="Setup IPv4 forwarding and iptables rules"></a>Setup IPv4 forwarding and iptables rules</h1><p>It’s also the same as PPTP server, you just need to edit file <code>/etc/sysctl.conf</code> and add (or change) a following line:</p>
+<pre><code>net.ipv4.ip_forward=1
 </code></pre><p>Then exit to shell and execute:</p>
 <figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo sysctl -p</span><br></pre></td></tr></table></figure>
 <p>To add iptables rules,  add the following lines in <code>/etc/rc.local</code> :</p>
-<pre><code>iptables -t nat -A POSTROUTING -s <span class="number">10.20</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">24</span> -o venet0 -j MASQUERADE
-iptables -A FORWARD -p tcp --syn -s <span class="number">10.20</span><span class="number">.0</span><span class="number">.0</span>/<span class="number">24</span> -j TCPMSS --<span class="built_in">set</span>-mss <span class="number">1356</span>
+<pre><code>iptables -t nat -A POSTROUTING -s 10.20.0.0/24 -o venet0 -j MASQUERADE
+iptables -A FORWARD -p tcp --syn -s 10.20.0.0/24 -j TCPMSS --set-mss 1356
 </code></pre><p>Note “-s 10.20.0.0/24” should be the net range defined in “ip range” section of <code>/etc/xl2tpd/xl2tpd.conf</code> .</p>
 <p>At last, restart xl2tpd and ipsec:</p>
 <figure class="highlight bash"><figcaption><span>Install pptpd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo service xl2tpd restart</span><br><span class="line">sudo service ipsec restart</span><br></pre></td></tr></table></figure>

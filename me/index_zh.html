@@ -40,7 +40,7 @@
 	<div class="line"></div>
 
     <div id="education" class="cv-section">
-      <h3>Education</h3>
+      <h3>教育经历</h3>
       <div class="cv-section-item">
         <h4 class="title">北京大学</h4>
         <h4 class="meta">硕士在读 / 2012 - 2015</h4>
@@ -67,45 +67,66 @@
       <h3>工作经历</h3>
       <div class="cv-section-item">
         <h4 class="title">软件工程师 (MTS)</h4>
-        <h4 class="meta">VMware Inc., 上海 / Jul. 2015 - Now</h4>
-        <p>从事云计算相关的项目工作。</p>
+        <h4 class="meta">VMware Inc., 上海 / 2015年7月至今</h4>
+        <p>供职于CPSBU，参与云计算相关项目。</p>
       </div>
       <!--end cv-section-item-->
       <div class="cv-section-item">
         <h4 class="title">软件开发实习生</h4>
-        <h4 class="meta">Google Inc., 美国总部, Mountain View / 2014年6月 - 2014年9月</h4>
-        <p>参与www.google.com搜索引擎基础架构关键模块的开发工作，设计和实现动态程序分析和监控模块。 </p>
-      </div>
-      <!--end cv-section-item-->
-      <div class="cv-section-item">
-        <h4 class="title">KVM嵌套虚拟化测试架构</h4>
-        <h4 class="meta">Google Summer of Code &amp; KVM Community/ 2013年6月 - 2013年10月</h4>
-        <p>该项目是为KVM的嵌套虚拟化部分设计的测试框架，包括嵌套虚拟化的测试框架和对嵌套虚拟机的指令模拟、EPT嵌套虚拟化和指令分析等模块的测试用例。</p>
-        <p>详情请参考：
-        <a href="http://wiki.qemu.org/Features/KVMNestedVirtualizationTestsuite" target=_blank>http://wiki.qemu.org/Features/KVMNestedVirtualizationTestsuite</a> 
-        和<a href="http://chunqili.blogspot.com" target=_blank>http://chunqili.blogspot.com</a>.</p>
+        <h4 class="meta">Google Inc., US, Mountain View / 2014年6月 - 2014年9月</h4>
+        <p>参与Google搜索引擎基础架构关键模块的开发工作，设计和实现动态程序分析和监控模块。</p>
       </div>
       <!--end cv-section-item-->
       <div class="cv-section-item">
         <h4 class="title">软件开发实习生</h4>
-        <h4 class="meta">因特尔中国研究院，北京 / 2012年6月 - 2013年1月</h4>
-        <p>为Intel Android平板电脑系统设计并实现一种轻量级的系统虚拟化和系统隔离机制。实现在一个Intel Android平板电脑上运行多个
-        Android环境，并提供环境之间的隔离与通信机制。</p>
+        <h4 class="meta">Intel中国研究院, 北京 / Jul. 2012 - Jan. 2013</h4>
+        <p>参与Intel平板电脑桌面虚拟化研究的相关项目。</p>
       </div>
       <!--end cv-section-item-->
       <div class="cv-section-item">
         <h4 class="title">软件开发实习生</h4>
         <h4 class="meta">EMC中国研究院，北京 / 2012年3月 - 2012年6月</h4>
-        <p>通过测量虚拟机对本地磁盘访问的模式，总结不同的磁盘调度算法下虚拟机并发磁盘访问的模式。设计一种针对虚拟机磁盘访问的攻击模式，并在私有云和Amazon EC2上进行实验验证。</p>
-        <p>在IEEE CloudCom. 2012上发表文章 “Understanding the Effects of Hypervisor I/O Scheduling for Virtual Machine Performance Interference”.[<a href="docs/CloudCom12.pdf" target=_blank>PDF</a>]</p>
+        <p>参与虚拟机存储相关项目，探索不同hypervisor调度策略环境中，虚拟机之间磁盘访问的影响情况。</p>
+        <p>在IEEE CloudCom. 2012上发表文章 “Understanding the Effects of Hypervisor I/O Scheduling for Virtual Machine Performance Interference”。[<a href="docs/CloudCom12.pdf" target=_blank>PDF</a>]</p>
       </div>
       <!--end cv-section-item-->
     </div>
     <!--end experience-->
 
     <div class="line"></div>
-    <div id="academic_projects" class="cv-section">
-      <h3>课程项目</h3>
+
+    <div id="项目经历" class="cv-section">
+      <h3>Projects</h3>
+      <div class="cv-section-item">
+        <h4 class="title">多核虚拟机环境下的确定性重演</h4>
+        <h4 class="meta">硕士毕业论文 / 2012年9月 - 2015年7约</h4>
+        <p>该研究关注多核虚拟机环境下确定性重演问题中内存交织问题，并提出了基于执行块冲突检测和“执行-回滚”策略的多喝虚拟机确定性重演系统：Samsara。</p>
+        <p>具体内容请参阅发表在APsys'15上的论文: 
+        <a href="http://dl.acm.org/citation.cfm?id=2797028" target=_blank>http://dl.acm.org/citation.cfm?id=2797028</a>.</p>
+      </div>
+      <!--end cv-section-item-->
+      <div class="cv-section-item">
+        <h4 class="title">KVM嵌套虚拟化测试架构</h4>
+        <h4 class="meta">Google Summer of Code & KVM Community / 2013年6月 - 2013年10月</h4>
+        <p>该项目是为KVM的嵌套虚拟化部分设计的测试框架。该框架实现了一个完整的虚拟机管理器（VMM hypervisor），包括虚拟机的指令模拟、EPT嵌套虚拟化和指令分析等模块，以及相关的测试用例。</p>
+        <p>详情请参考：
+        <a href="http://wiki.qemu.org/Features/KVMNestedVirtualizationTestsuite" target=_blank>http://wiki.qemu.org/Features/KVMNestedVirtualizationTestsuite</a> 
+        和 <a href="http://chunqili.blogspot.com" target=_blank>http://chunqili.blogspot.com</a>.</p>
+      </div>
+      <!--end cv-section-item-->
+      <div class="cv-section-item">
+        <h4 class="title">虚拟平板</h4>
+        <h4 class="meta">Intel Labs China, Beijing / Jul. 2012 - Jan. 2013</h4>
+        <p>为Intel Android平板电脑系统设计并实现一种轻量级的系统虚拟化和系统隔离机制。实现在一个Intel Android平板电脑上运行多个 Android环境，并提供环境之间的隔离与通信机制。</p>
+      </div>
+      <!--end cv-section-item-->
+      <div class="cv-section-item">
+        <h4 class="title">虚拟机管理器磁盘调度策略对虚拟机磁盘效率影响的研究</h4>
+        <h4 class="meta">EMC中国研究院，北京 / 2012年3月 - 2012年6月</h4>
+        <p>通过测量虚拟机对本地磁盘访问的模式，总结不同的磁盘调度算法下虚拟机并发磁盘访问的模式。设计一种针对虚拟机磁盘访问的攻击模式，并在vSphere私有云和Amazon EC2上进行实验验证。</p>
+        <p>IEEE CloudCom. 2012上发表文章 “Understanding the Effects of Hypervisor I/O Scheduling for Virtual Machine Performance Interference”。[<a href="docs/CloudCom12.pdf" target=_blank>PDF</a>]</p>
+      </div>
+      <!--end cv-section-item-->
       <div class="cv-section-item">
         <h4 class="title">LSM: 带本地镜像的虚拟机热迁移系统</h4>
         <h4 class="meta">学士毕业论文 / 2011年10月 - 2012年5月</h4>
@@ -113,14 +134,14 @@
       </div>
       <!--end cv-section-item-->
       <div class="cv-section-item">
-        <h4 class="title">MiniC: UNICORE-32体系结构C语言编译器</h4>
-        <h4 class="meta">编译技术课程作业 / 2010年9月 - 2011年1月</h4>
+        <h4 class="title">MiniC: UNICORE-32 体系结构C语言编译器</h4>
+        <h4 class="meta">编译技术课程项目 / 2010年9月 - 2011年1月</h4>
         <p>为Unicore-32架构的处理器设计一个C语言子集的编译器，实现表达式分析、指针分析等多种优化，在某些测试用例中能够获得和gcc-unicore32相接近的性能。</p>
       </div>
       <!--end cv-section-item-->
       <div class="cv-section-item">
-        <h4 class="title">UNICORE-32 模拟器</h4>
-        <h4 class="meta">计算机体系结构课程作业 / 2010年9月 - 2011年1月</h4>
+        <h4 class="title">UNICORE-32 架构指令模拟器</h4>
+        <h4 class="meta">计算机体系结构课程项目 / 2010年9月 - 2011年1月</h4>
         <p>该项目设计了一个能够模拟Unicore-32处理器五级流水和缓存的模拟器。该模拟器能够模拟可执行程序在Unicore-32处理器上的运行情况和性能统计，并支持单步调试等高级功能。</p>
       </div>
       <!--end cv-section-item-->

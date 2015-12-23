@@ -293,95 +293,95 @@ Introduct">
 
       
         <span itemprop="articleBody"><p>In previous post, some overlay network technologies for Docker are analysised. On this post let’s focus on <a href="https://github.com/coreos/flannel" target="_blank" rel="external">Flannel</a>, a virtual network that creates subnet work Dockers across different hosts.</p>
-<h1 id="Introduction_to_Flannel">Introduction to Flannel</h1><p><a href="https://github.com/coreos/flannel" target="_blank" rel="external">Flannel</a>, similar to <a href="https://github.com/projectcalico/calico-docker" target="_blank" rel="external">Calico</a>, <a href="https://datatracker.ietf.org/doc/rfc7348/" target="_blank" rel="external">VXLAN</a> and <a href="https://github.com/weaveworks/weave" target="_blank" rel="external">Weave</a>, provides a configurable virtual overlay network for Docker. Flannel runs an agent, flanneld, on each host and is responsible for allocating subnet lease out of a preconfigured address space. Flannel uses <a href="https://github.com/coreos/etcd" target="_blank" rel="external">etcd</a> to store network configurations. I copied this architecture image from <a href="https://github.com/coreos/flannel" target="_blank" rel="external">Flannel GitHub page</a> to illustrate the details of the path a packet take as it tranverse the overlay network.</p>
+<h1 id="Introduction_to_Flannel"><a href="#Introduction_to_Flannel" class="headerlink" title="Introduction to Flannel"></a>Introduction to Flannel</h1><p><a href="https://github.com/coreos/flannel" target="_blank" rel="external">Flannel</a>, similar to <a href="https://github.com/projectcalico/calico-docker" target="_blank" rel="external">Calico</a>, <a href="https://datatracker.ietf.org/doc/rfc7348/" target="_blank" rel="external">VXLAN</a> and <a href="https://github.com/weaveworks/weave" target="_blank" rel="external">Weave</a>, provides a configurable virtual overlay network for Docker. Flannel runs an agent, flanneld, on each host and is responsible for allocating subnet lease out of a preconfigured address space. Flannel uses <a href="https://github.com/coreos/etcd" target="_blank" rel="external">etcd</a> to store network configurations. I copied this architecture image from <a href="https://github.com/coreos/flannel" target="_blank" rel="external">Flannel GitHub page</a> to illustrate the details of the path a packet take as it tranverse the overlay network.</p>
 <img src="/images/flannel-01.png">
-<h1 id="Config_Etcd">Config Etcd</h1><h2 id="Download_and_Run_Etcd">Download and Run Etcd</h2><p>Since Flannel depends on Etcd, you need to download, run and config Etcd before starting flanneld. Assume that you have two Linux VM (or physical machine) with hostname node1/node2 and IP 192.168.236.130/131 seperately. On each node download and run Etcd as follows:</p>
+<h1 id="Config_Etcd"><a href="#Config_Etcd" class="headerlink" title="Config Etcd"></a>Config Etcd</h1><h2 id="Download_and_Run_Etcd"><a href="#Download_and_Run_Etcd" class="headerlink" title="Download and Run Etcd"></a>Download and Run Etcd</h2><p>Since Flannel depends on Etcd, you need to download, run and config Etcd before starting flanneld. Assume that you have two Linux VM (or physical machine) with hostname node1/node2 and IP 192.168.236.130/131 seperately. On each node download and run Etcd as follows:</p>
 <figure class="highlight bash"><figcaption><span>Download and run etcd</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">curl -L  https://github.com/coreos/etcd/releases/download/v2.<span class="number">2.1</span>/etcd-v2.<span class="number">2.1</span>-linux-amd64.tar.gz -o etcd-v2.<span class="number">2.1</span>-linux-amd64.tar.gz</span><br><span class="line">tar xzvf etcd-v2.<span class="number">2.1</span>-linux-amd64.tar.gz</span><br><span class="line"><span class="built_in">cd</span> etcd-v2.<span class="number">2.1</span>-linux-amd64</span><br><span class="line">./etcd -name &#123;node&#125; -initial-advertise-peer-urls http://&#123;NODE_IP&#125;:<span class="number">2380</span> \</span><br><span class="line">  -listen-peer-urls http://<span class="number">0.0</span>.<span class="number">0.0</span>:<span class="number">2380</span> \</span><br><span class="line">  -listen-client-urls http://<span class="number">0.0</span>.<span class="number">0.0</span>:<span class="number">2379</span>,http://<span class="number">127.0</span>.<span class="number">0.1</span>:<span class="number">4001</span> \</span><br><span class="line">  -advertise-client-urls http://<span class="number">0.0</span>.<span class="number">0.0</span>:<span class="number">2379</span> \</span><br><span class="line">  -initial-cluster-token etcd-cluster \</span><br><span class="line">  -initial-cluster node1=http://<span class="number">192.168</span>.<span class="number">236.130</span>:<span class="number">2380</span>,node2=http://<span class="number">192.168</span>.<span class="number">236.131</span>:<span class="number">2380</span> \</span><br><span class="line">  -initial-cluster-state new</span><br></pre></td></tr></table></figure>
-<h2 id="Config_Etcd-1">Config Etcd</h2><p>Flannel reads its configuration from etcd. By default, it will read the configuration from <code>/coreos.com/network/config</code> (can be overridden via –etcd-prefix). You need to use <code>etcdctl</code> utility to set values in etcd. On the directory you downloaded Etcd previously, run following commands:</p>
-<pre><code>./etcdctl <span class="keyword">set</span> /coreos.com/network/config     \
-    '{<span class="string">"Network"</span>: <span class="string">"10.0.0.0/8"</span>,                \
-    <span class="string">"SubnetLen"</span>: <span class="number">20</span>,                        \
-    <span class="string">"SubnetMin"</span>: <span class="string">"10.10.0.0"</span>,                \
-    <span class="string">"SubnetMax"</span>: <span class="string">"10.99.0.0"</span>,                \
-    <span class="string">"Backend"</span>: {                            \
-        <span class="string">"Type"</span>: <span class="string">"udp"</span>,                        \
-        <span class="string">"Port"</span>: <span class="number">7890</span>}} '
-</code></pre><h1 id="Build_and_Run_Flannel">Build and Run Flannel</h1><h2 id="Build_Flannel">Build Flannel</h2><ul>
+<h2 id="Config_Etcd-1"><a href="#Config_Etcd-1" class="headerlink" title="Config Etcd"></a>Config Etcd</h2><p>Flannel reads its configuration from etcd. By default, it will read the configuration from <code>/coreos.com/network/config</code> (can be overridden via –etcd-prefix). You need to use <code>etcdctl</code> utility to set values in etcd. On the directory you downloaded Etcd previously, run following commands:</p>
+<pre><code>./etcdctl set /coreos.com/network/config     \
+    &apos;{&quot;Network&quot;: &quot;10.0.0.0/8&quot;,                \
+    &quot;SubnetLen&quot;: 20,                        \
+    &quot;SubnetMin&quot;: &quot;10.10.0.0&quot;,                \
+    &quot;SubnetMax&quot;: &quot;10.99.0.0&quot;,                \
+    &quot;Backend&quot;: {                            \
+        &quot;Type&quot;: &quot;udp&quot;,                        \
+        &quot;Port&quot;: 7890}} &apos;
+</code></pre><h1 id="Build_and_Run_Flannel"><a href="#Build_and_Run_Flannel" class="headerlink" title="Build and Run Flannel"></a>Build and Run Flannel</h1><h2 id="Build_Flannel"><a href="#Build_Flannel" class="headerlink" title="Build Flannel"></a>Build Flannel</h2><ul>
 <li>Step 1: On ubuntu, run <code>sudo apt-get install linux-libc-dev golang gcc</code>. On Fedora/Redhat, run <code>sudo yum install kernel-headers golang gcc</code>.</li>
 <li>Step 2: Git clone the flannel repo: git clone <a href="https://github.com/coreos/flannel.git" target="_blank" rel="external">https://github.com/coreos/flannel.git</a></li>
 <li>Step 3: Run the build script: cd flannel; ./build</li>
 </ul>
 <p>If Flannel build failed on your local environment, you can also build flannel inside a Docker container. Confirm that you have install Docker first with <code>docker -v</code>, and then execute:</p>
 <figure class="highlight bash"><figcaption><span>Install Docker</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> flannel</span><br><span class="line">docker build .</span><br></pre></td></tr></table></figure>
-<h2 id="Run_Flannel">Run Flannel</h2><p>After Etcd is set up, you need to run flanneld on both nodes:</p>
+<h2 id="Run_Flannel"><a href="#Run_Flannel" class="headerlink" title="Run Flannel"></a>Run Flannel</h2><p>After Etcd is set up, you need to run flanneld on both nodes:</p>
 <figure class="highlight bash"><figcaption><span>Run flannel</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo ./bin/flanneld &amp;</span><br></pre></td></tr></table></figure>
 <p>Use <code>ifconfig</code> to confirm the network of flanned was setup successfully, the outputs should be something like this:</p>
-<pre><code>flannel0  Link encap:UNSPEC  HWaddr <span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>-<span class="number">00</span>
-          inet addr:<span class="number">10.15</span><span class="number">.240</span><span class="number">.0</span>  P-t-P:<span class="number">10.15</span><span class="number">.240</span><span class="number">.0</span>  Mask:<span class="number">255.0</span><span class="number">.0</span><span class="number">.0</span>
-          UP POINTOPOINT RUNNING NOARP MULTICAST  MTU:<span class="number">1472</span>  Metric:<span class="number">1</span>
-          RX packets:<span class="number">606921</span> errors:<span class="number">0</span> dropped:<span class="number">0</span> overruns:<span class="number">0</span> frame:<span class="number">0</span>
-          TX packets:<span class="number">308311</span> errors:<span class="number">0</span> dropped:<span class="number">0</span> overruns:<span class="number">0</span> carrier:<span class="number">0</span>
-          collisions:<span class="number">0</span> txqueuelen:<span class="number">500</span>
-          RX bytes:<span class="number">893358516</span> (<span class="number">893.3</span> MB)  TX bytes:<span class="number">16225380</span> (<span class="number">16.2</span> MB)
+<pre><code>flannel0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+          inet addr:10.15.240.0  P-t-P:10.15.240.0  Mask:255.0.0.0
+          UP POINTOPOINT RUNNING NOARP MULTICAST  MTU:1472  Metric:1
+          RX packets:606921 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:308311 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:500
+          RX bytes:893358516 (893.3 MB)  TX bytes:16225380 (16.2 MB)
 </code></pre><p>After Flannel is running, you need to config network for docker0 and restart docker daemon with Flannel network configuration, execute commands as follows:</p>
 <figure class="highlight bash"><figcaption><span>Run flannel</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">service docker stop</span><br><span class="line"><span class="built_in">source</span> /run/flannel/subnet.env</span><br><span class="line">sudo ifconfig docker0 <span class="variable">$&#123;FLANNEL_SUBNET&#125;</span></span><br><span class="line">sudo docker daemon --bip=<span class="variable">$&#123;FLANNEL_SUBNET&#125;</span> --mtu=<span class="variable">$&#123;FLANNEL_MTU&#125;</span> &amp;</span><br><span class="line">docker ps</span><br></pre></td></tr></table></figure>
-<h2 id="Start_Docker">Start Docker</h2><p>After Flannel set up, just start your docker without any differences without Flannel. Run the following command on node1:</p>
+<h2 id="Start_Docker"><a href="#Start_Docker" class="headerlink" title="Start Docker"></a>Start Docker</h2><p>After Flannel set up, just start your docker without any differences without Flannel. Run the following command on node1:</p>
 <figure class="highlight bash"><figcaption><span>Run Docker</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo docker run -itd --name=worker-<span class="number">1</span> ubuntu</span><br><span class="line">sudo docker run -itd --name=worker-<span class="number">2</span> ubuntu</span><br></pre></td></tr></table></figure>
 <p>Then run Docker on node2:</p>
 <figure class="highlight bash"><figcaption><span>Run Docker</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo docker run -itd --name=worker-<span class="number">3</span> ubuntu</span><br></pre></td></tr></table></figure>
 <p>Then use <code>sudo docker exec worker-N ifconfig</code> to get the IP of these workers (e.g. 10.15.240.2, 10.15.240.3 and 10.10.160.2 for worker-1/2/3). On node1, test connectivity to worker-3:</p>
 <figure class="highlight bash"><figcaption><span>Test connectivity</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo docker <span class="built_in">exec</span> worker-<span class="number">1</span> ping -c4 <span class="number">10.10</span>.<span class="number">160.2</span></span><br><span class="line">sudo docker <span class="built_in">exec</span> worker-<span class="number">1</span> ping www.google.com</span><br></pre></td></tr></table></figure>
 <p>All these pings should return successfully.</p>
-<h1 id="Simple_Performance_Test">Simple Performance Test</h1><p>Until now Flannel is setup for Docker and all the workers are connected with each other <strong>physically</strong>. Then I did a simple performance test with iperf between two Dockers in different/same hosts.</p>
+<h1 id="Simple_Performance_Test"><a href="#Simple_Performance_Test" class="headerlink" title="Simple Performance Test"></a>Simple Performance Test</h1><p>Until now Flannel is setup for Docker and all the workers are connected with each other <strong>physically</strong>. Then I did a simple performance test with iperf between two Dockers in different/same hosts.</p>
 <p>Firstly let’s see the native network performance between two hosts:</p>
-<pre><code>flannel@node2:~<span class="preprocessor"># iperf -c <span class="number">192.168</span><span class="number">.236</span><span class="number">.130</span></span>
+<pre><code>flannel@node2:~# iperf -c 192.168.236.130
 ------------------------------------------------------------
-Client connecting to <span class="number">192.168</span><span class="number">.236</span><span class="number">.130</span>, TCP port <span class="number">5001</span>
-TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">default</span>)
+Client connecting to 192.168.236.130, TCP port 5001
+TCP window size: 85.0 KByte (default)
 ------------------------------------------------------------
-[  <span class="number">3</span>] local <span class="number">192.168</span><span class="number">.236</span><span class="number">.131</span> port <span class="number">54584</span> connected with <span class="number">192.168</span><span class="number">.236</span><span class="number">.130</span> port <span class="number">5001</span>
+[  3] local 192.168.236.131 port 54584 connected with 192.168.236.130 port 5001
 [ ID] Interval       Transfer     Bandwidth
-[  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec  <span class="number">2.57</span> GBytes  <span class="number">2.21</span> Gbits/sec
+[  3]  0.0-10.0 sec  2.57 GBytes  2.21 Gbits/sec
 </code></pre><p>Then dockers on different host:</p>
-<pre><code>root@<span class="number">93</span>c451432761:~<span class="preprocessor"># iperf -c <span class="number">10.10</span><span class="number">.160</span><span class="number">.2</span></span>
+<pre><code>root@93c451432761:~# iperf -c 10.10.160.2
 ------------------------------------------------------------
-Client connecting to <span class="number">10.10</span><span class="number">.160</span><span class="number">.2</span>, TCP port <span class="number">5001</span>
-TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">default</span>)
+Client connecting to 10.10.160.2, TCP port 5001
+TCP window size: 85.0 KByte (default)
 ------------------------------------------------------------
-[  <span class="number">3</span>] local <span class="number">10.15</span><span class="number">.240</span><span class="number">.2</span> port <span class="number">57496</span> connected with <span class="number">10.10</span><span class="number">.160</span><span class="number">.2</span> port <span class="number">5001</span>
+[  3] local 10.15.240.2 port 57496 connected with 10.10.160.2 port 5001
 [ ID] Interval       Transfer     Bandwidth
-[  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec   <span class="number">418</span> MBytes   <span class="number">351</span> Mbits/sec
+[  3]  0.0-10.0 sec   418 MBytes   351 Mbits/sec
 </code></pre><p>The performance of Dockers on the same host is pretty good.</p>
-<pre><code>root@<span class="number">93</span>c451432761:~<span class="preprocessor"># iperf -c <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span></span>
+<pre><code>root@93c451432761:~# iperf -c 10.15.240.3
 ------------------------------------------------------------
-Client connecting to <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span>, TCP port <span class="number">5001</span>
-TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">default</span>)
+Client connecting to 10.15.240.3, TCP port 5001
+TCP window size: 85.0 KByte (default)
 ------------------------------------------------------------
-[  <span class="number">3</span>] local <span class="number">10.15</span><span class="number">.240</span><span class="number">.2</span> port <span class="number">38099</span> connected with <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span> port <span class="number">5001</span>
+[  3] local 10.15.240.2 port 38099 connected with 10.15.240.3 port 5001
 [ ID] Interval       Transfer     Bandwidth
-[  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec  <span class="number">39.2</span> GBytes  <span class="number">33.7</span> Gbits/sec
+[  3]  0.0-10.0 sec  39.2 GBytes  33.7 Gbits/sec
 </code></pre><p><del><strong>The performace is so bad compared with native!!!!!</strong> I can’t figure out why the performance degrades too much with Flannel. Since Calico and Docker Multi-host Network can achieve more than 80% performance compared with native, Flannel does a aweful job apparently. If anyone knows why, please email me or comments under this blog.</del></p>
 <p>After read through the configuration documents of Flannel, I found that flannel support two backends: UDP backend and VxLAN backend. Try VxLAN backend and the speed is much more fast and close to native performance.</p>
-<h1 id="UDP_and_VxLAN_backends">UDP and VxLAN backends</h1><p>There are two different backends supported by Flannel. The previous configuration on this blog uses UDP backend, which is a pretty slow solution because all the packets are encrypted in userspace. VxLAN backend uses Linux Kernel VxLAN support as well as some hardware features to achieve a much more faster network.</p>
+<h1 id="UDP_and_VxLAN_backends"><a href="#UDP_and_VxLAN_backends" class="headerlink" title="UDP and VxLAN backends"></a>UDP and VxLAN backends</h1><p>There are two different backends supported by Flannel. The previous configuration on this blog uses UDP backend, which is a pretty slow solution because all the packets are encrypted in userspace. VxLAN backend uses Linux Kernel VxLAN support as well as some hardware features to achieve a much more faster network.</p>
 <p>It’s easy to use VxLAN backend. When configuring Etcd, just define the <code>backend</code> block with <code>vxlan</code>.</p>
-<pre><code>./etcdctl <span class="keyword">set</span> /coreos.com/network/config     \
-    '{<span class="string">"Network"</span>: <span class="string">"10.0.0.0/8"</span>,                \
-    <span class="string">"SubnetLen"</span>: <span class="number">20</span>,                        \
-    <span class="string">"SubnetMin"</span>: <span class="string">"10.10.0.0"</span>,                \
-    <span class="string">"SubnetMax"</span>: <span class="string">"10.99.0.0"</span>,                \
-    <span class="string">"Backend"</span>: {                            \
-        <span class="string">"Type"</span>: <span class="string">"vxlan"</span>}} '
+<pre><code>./etcdctl set /coreos.com/network/config     \
+    &apos;{&quot;Network&quot;: &quot;10.0.0.0/8&quot;,                \
+    &quot;SubnetLen&quot;: 20,                        \
+    &quot;SubnetMin&quot;: &quot;10.10.0.0&quot;,                \
+    &quot;SubnetMax&quot;: &quot;10.99.0.0&quot;,                \
+    &quot;Backend&quot;: {                            \
+        &quot;Type&quot;: &quot;vxlan&quot;}} &apos;
 </code></pre><p>With VxLAN backend, the iperf result of two containers on different hosts are as follows:</p>
-<pre><code>root@<span class="number">93</span>c451432761:~<span class="preprocessor"># iperf -c <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span></span>
+<pre><code>root@93c451432761:~# iperf -c 10.15.240.3
 ------------------------------------------------------------
-Client connecting to <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span>, TCP port <span class="number">5001</span>
-TCP window size: <span class="number">85.0</span> KByte (<span class="keyword">default</span>)
+Client connecting to 10.15.240.3, TCP port 5001
+TCP window size: 85.0 KByte (default)
 ------------------------------------------------------------
-[  <span class="number">3</span>] local <span class="number">10.15</span><span class="number">.240</span><span class="number">.2</span> port <span class="number">38099</span> connected with <span class="number">10.15</span><span class="number">.240</span><span class="number">.3</span> port <span class="number">5001</span>
+[  3] local 10.15.240.2 port 38099 connected with 10.15.240.3 port 5001
 [ ID] Interval       Transfer     Bandwidth
-[  <span class="number">3</span>]  <span class="number">0.0</span>-<span class="number">10.0</span> sec  <span class="number">1.80</span> GBytes  <span class="number">1.56</span> Gbits/sec
+[  3]  0.0-10.0 sec  1.80 GBytes  1.56 Gbits/sec
 </code></pre><p>This is an acceptable result with about 80% performance compared with native network.</p>
-<h1 id="References">References</h1><p>[1] Flannel code base, <a href="https://github.com/coreos/flannel" target="_blank" rel="external">https://github.com/coreos/flannel</a><br>[2] Using coreos flannel for docker networking, <a href="http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking" target="_blank" rel="external">http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking</a></p>
+<h1 id="References"><a href="#References" class="headerlink" title="References"></a>References</h1><p>[1] Flannel code base, <a href="https://github.com/coreos/flannel" target="_blank" rel="external">https://github.com/coreos/flannel</a><br>[2] Using coreos flannel for docker networking, <a href="http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking" target="_blank" rel="external">http://www.slideshare.net/lorispack/using-coreos-flannel-for-docker-networking</a></p>
 </span>
       
     </div>
